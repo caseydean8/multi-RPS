@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="/assets/style.css">
+  <title>RPS Multiplayer</title>
+</head>
+
+<body>
+  <div class="parent">
+    <div id="header">rock paper scissors</div>
+    <div id="player-1">player 1</div>
+    <div id="player-2">player 2</div>
+    <input id="comment-in" type="text" placeholder="shitpost" required />
+    <button id="submit-button"></button>
+    <button id="rock"></button>
+    <button id="paper"></button>
+    <button id="scissors"></button>
+    <div id="comment-out"></div>
+  </div>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+    integrity="sha256-pasqAKBDmFT4eHoN2ndd6lN370kFiGUFyTiUHWhU7k8=" crossorigin="anonymous"></script>
+
+  <!-- Firebase References -->
+  <script src="https://www.gstatic.com/firebasejs/7.8.2/firebase-app.js"></script>
+
+  <script src="https://www.gstatic.com/firebasejs/7.8.2/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.8.2/firebase-analytics.js"></script>
+
+  <!-- moment JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment-with-locales.min.js"></script>
+
+  <!-- Javascript -->
+  <script src="/assets/app.js"></script>
+</body>
+
+</html>
