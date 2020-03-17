@@ -5,32 +5,54 @@
   grid-column-gap: 4px;
   grid-row-gap: 4px;
   height: 100vh;
+  grid-template-areas: 
+  "header header header"
+  "player-1 player-1 player-2"
+  "comment-in comment-in comment-in"
+  ". . submit-button"
+  "rock paper scissors"
+  "comment-out comment-out comment-out"
+  ;
 }
 
 #header {
-  grid-area: 1 / 1 / 2 / 4;
+  grid-area: header;
 }
+ #start {
+   grid-area: 2 / 1 / 3 / 4;
+ }
 #player-1 {
-  grid-area: 2 / 1 / 3 / 2;
+  grid-area: player-1;
 }
 #player-2 {
-  grid-area: 2 / 3 / 3 / 4;
+  grid-area: player-2;
 }
 #comment-in {
-  grid-area: 3 / 1 / 4 / 4;
+  grid-area: comment-in;
 }
 #submit-button {
-  grid-area: 4 / 3 / 5 / 4;
+  grid-area: submit-button;
 }
 #rock {
-  grid-area: 5 / 1 / 6 / 2;
+  grid-area: rock;
 }
 #paper {
-  grid-area: 5 / 2 / 6 / 3;
+  grid-area: paper;
 }
 #scissors {
-  grid-area: 5 / 3 / 6 / 4;
+  grid-area: scissors;
 }
 #comment-out {
-  grid-area: 6 / 1 / 7 / 4;
+  grid-area: comment-out;
+}
+
+button,
+.rps-buttons {
+  border: solid 1px blue;
+  border-radius: 4px;
+}
+
+input {
+  border: solid 1px #bbb;
+  border-radius: 4px;
 }
