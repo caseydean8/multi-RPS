@@ -21,12 +21,15 @@ db.ref().on("value", snapshot => {
   console.log(rpsObj);
 });
 
-// let appPlayers = 0;
+// >>>>>>>>>>>>>> START BUTTON >>>>>>>>>>>>>>>>
 $("#start").on("click", function(event) {
   event.preventDefault();
+  console.log(`start clicked`);
   $(this).remove();
-  // db.ref().update({ players: 0 });
-  console.log(rpsObj.players);
+  playerCreate();
+});
+
+const playerCreate = () => {
   if (rpsObj.players < 2) {
     let players = rpsObj.players;
     players++;
@@ -36,13 +39,13 @@ $("#start").on("click", function(event) {
       .attr({ id: "no-button" })
       .text("no thanks");
     const userNameBtn = $("<button>")
-      .attr({ id: "username-button" })
+      .attr({ id: "username-button", type: "submit" })
       .text("submit");
     $("#player-2").append(noBtn);
     $("#submit-button").append(userNameBtn);
     db.ref().update({ players: players });
-  } // $("#submit-button").text("add username");
-});
+  }
+};
 
 // XXXXXXXXXXXXX No thanks button XXXXXXXXXXXXX
 $(document).on("click", "#no-button", function(event) {
@@ -55,6 +58,16 @@ $(document).on("click", "#no-button", function(event) {
 
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
+  userNameAdd();
+});
+
+const checkSubmit = (e) => {
+  if (e && e.keyCode == 13) {
+    userNameAdd();
+  }
+}
+
+const userNameAdd = () => {
   const user = $("#comment-in")
     .val()
     .trim();
@@ -62,14 +75,14 @@ $(document).on("click", "#username-button", function(event) {
   sendFirebase(user);
   playerDisplay(user);
   $("#comment-in").val("");
-});
+};
 
 const sendFirebase = username => {
   const player = {
     username: username,
     comment: "",
     guess: "",
-    // players: appPlayers,
+    player: rpsObj.players,
     losses: 0,
     wins: 0
   };
@@ -94,6 +107,9 @@ const game = {
 
 const playerDisplay = data => {
   $("#player-1").text(`welcome ${data}!`);
+  $("#player-2").remove();
+  $("#comment-in").remove();
+  $("#submit-button").remove();
 };
 
 $(document).on("click", "#scissors", function(event) {
@@ -109,7 +125,6 @@ $(document).on("click", "#scissors", function(event) {
   db.ref().update({ players: 0 });
   location.reload();
 });
-
 
 const rpsLogic = () => {
   if (userGuess === "r" || userGuess === "p" || userGuess === "s") {
