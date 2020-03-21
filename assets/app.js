@@ -49,11 +49,11 @@ const playerCreate = () => {
 
 // XXXXXXXXXXXXX No thanks button XXXXXXXXXXXXX
 $(document).on("click", "#no-button", function(event) {
-  // appPlayers++;
   event.preventDefault();
   const player = `player ${rpsObj.players}`;
   sendFirebase(player);
   playerDisplay(player);
+  rpsButtons(rpsObj.players);
 });
 
 $(document).on("click", "#username-button", function(event) {
@@ -61,20 +61,33 @@ $(document).on("click", "#username-button", function(event) {
   userNameAdd();
 });
 
-const checkSubmit = (e) => {
+const checkSubmit = e => {
   if (e && e.keyCode == 13) {
     userNameAdd();
   }
-}
+};
 
 const userNameAdd = () => {
   const user = $("#comment-in")
     .val()
     .trim();
-  console.log(user);
-  sendFirebase(user);
-  playerDisplay(user);
-  $("#comment-in").val("");
+  if (user) {
+    sendFirebase(user);
+    playerDisplay(user);
+    rpsButtons(rpsObj.players);
+    $("#comment-in").val("");
+  } else {
+    $("#comment-in").attr({
+      placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
+    });
+  }
+};
+
+// !!!!!!!!!!!!! Dynamic r p s buttons !!!!!!!!!!!!!
+const rpsButtons = (dataPlayer) => {
+  $("#player-1").text("Make your selection");
+  $(".rps-buttons").css({ display: "block" });
+  $(".rps-buttons").attr({"data-player": dataPlayer});
 };
 
 const sendFirebase = username => {
@@ -102,7 +115,8 @@ db.ref().on("child_added", function(snapshot) {
 
 const game = {
   playerArr: [],
-  playerObj: {}
+  playerObj: {},
+  guess: ""
 };
 
 const playerDisplay = data => {
@@ -112,7 +126,25 @@ const playerDisplay = data => {
   $("#submit-button").remove();
 };
 
-$(document).on("click", "#scissors", function(event) {
+// $$$$$$$$$$$$$ ROCK PAPER SCISSORS Buttons $$$$$$$$$$$$$
+
+$(document).on("click", ".rps-buttons", function(event) {
+  event.preventDefault();
+  let guess = $(this).attr("id");
+  console.log(guess);
+  let id = $(this).data("player");
+  let dbId = game.playerArr[id].id;
+  console.log(game.playerArr[id].id);
+  guessSubmit(dbId, guess);
+});
+
+const guessSubmit = (id, guess) => {
+  db.ref(id).update({ guess: guess })
+}
+
+// ############# CLEAR DATABASE #############
+
+$(document).on("click", "#clear", function(event) {
   event.preventDefault();
   db.ref()
     .remove()
