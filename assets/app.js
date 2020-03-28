@@ -92,7 +92,6 @@ const pageDisplay = () => {
 $(document).on("click", "#no-button", function(event) {
   event.preventDefault();
   const noUserName = $(this).data("no");
-  console.log(`no button ${noUserName}`);
   const player = `player ${rpsObj[noUserName].player}`;
   userNameAdd(player, noUserName);
 });
@@ -148,7 +147,7 @@ const rpsButtons = dataPlayer => {
 
 // %%%%%%%%%%%%% SEND FIREBASE %%%%%%%%%%%%%
 const sendFirebase = (userName, player) => {
-  console.log(player);
+  // console.log(player);
   db.ref(player)
     .update({ userName: userName })
     .then(function() {
@@ -160,7 +159,9 @@ const sendFirebase = (userName, player) => {
 };
 
 const playerDisplay = (player, id) => {
-  $(`#player-1[data-play=${id}]`).text(`Welcome ${player}! Make your selection!`);
+  $(`#player-1[data-play=${id}]`).text(
+    `Welcome ${player}! Make your selection!`
+  );
   // $("#player-2").remove();
   $("#comment-in").remove();
   $("#submit-button").remove();
@@ -181,19 +182,20 @@ $(document).on("click", ".rps-buttons", function(event) {
 });
 
 const guessSubmit = (id, guess) => {
+  console.log(playerArr);
   db.ref(id)
     .update({ guess: guess })
     .then(() => {
       console.log("guess updated");
-      // if (
-      //   typeof rpsObj.player1.guess === "number" &&
-      //   typeof rpsObj.player2.guess === "number"
-      // )
-        // rpsLogic(rpsObj.player1.guess, rpsObj.player2.guess);
+      console.log(rpsObj[id].guess);
+      console.log(rpsObj[playerArr[1]].guess);
+    })
+    .then(() => {
+      if (rpsObj[playerArr[1]].guess > -1) {
+        rpsLogic(rpsObj[playerArr[0]].guess, rpsObj[playerArr[1]].guess);
+      }
     })
     .catch(err => console.log(err));
-  // console.log(typeof rpsObj.player1.guess);
-  // console.log(typeof rpsObj.player2.guess);
 };
 
 // ############# CLEAR DATABASE #############
