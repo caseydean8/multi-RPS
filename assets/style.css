@@ -28,6 +28,7 @@
 }
 #comment-in {
   grid-area: comment-in;
+  display: none;
 }
 #submit-button {
   grid-area: submit-button;
