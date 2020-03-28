@@ -26,24 +26,28 @@ let rpsObj = {};
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   console.log(rpsObj);
+  // pageRefresh();
 });
 
-db.ref().on("child_changed", snapshot => {
-  // console.log("child changed");
-  let multi = snapshot.val();
-  console.log(`child changed snapshot ${multi}`);
-  console.log(`child changed snapshot user name ${multi.userName}`);
-});
-
+// db.ref().on("child_changed", snapshot => {
+//   // console.log("child changed");
+//   let multi = snapshot.val();
+//   console.log(`child changed snapshot ${multi}`);
+//   console.log(`child changed snapshot user name ${multi.userName}`);
+// });
 // >>>>>>>>>>>>>> START BUTTON >>>>>>>>>>>>>>>>
 $("#start").on("click", function(event) {
   event.preventDefault();
-  $("#comment-in").css({ display: "block" });
-  $(this).remove();
   playerCreate();
 });
-let playerId;
-let playerArr = [];
+
+const playerArr = [];
+const pageRefresh = () => {
+  console.log("page refresh");
+  console.log(rpsObj.players);
+  if (rpsObj.players > 0) pageDisplay();
+};
+
 const playerCreate = () => {
   let players = rpsObj.players;
   players++;
@@ -59,12 +63,17 @@ const playerCreate = () => {
   db.ref().on("child_added", snapshot => {
     playerArr.push(snapshot.key);
   });
-
   console.log(playerArr);
+  pageDisplay();
+};
 
+const pageDisplay = () => {
+  // console.log(`page display hit`);
+  $("#comment-in").css({ display: "block" });
+  $("#start").remove();
   $("#player-1").text("Welcome! add a username?");
   // add data-play to display for different players
-  const playerId = playerArr[players - 1];
+  const playerId = playerArr[rpsObj.players - 1];
   $("#player-1, #player-2").attr({ "data-play": playerId });
   // console.log($(""))
   $("#comment-in").attr({ placeholder: "enter username" });
@@ -74,9 +83,9 @@ const playerCreate = () => {
   const userNameBtn = $("<button>")
     .attr({ id: "username-button", type: "submit", "data-username": playerId })
     .text("submit");
+  $("#comment-in").attr({ "data-input": playerId });
   $("#player-2").append(noBtn);
   $("#submit-button").append(userNameBtn);
-  
 };
 
 // XXXXXXXXXXXXX No thanks button XXXXXXXXXXXXX
@@ -85,47 +94,38 @@ $(document).on("click", "#no-button", function(event) {
   const noUserName = $(this).data("no");
   console.log(`no button ${noUserName}`);
   const player = `player ${rpsObj[noUserName].player}`;
-  // rpsObj.player1.username || rpsObj.player2.username
-  //   ? (player = `player 2`)
-  //   : (player = `player 1`);
   userNameAdd(player, noUserName);
 });
 
 // $$$$$$$$$$$$$ enter user name $$$$$$$$$$$$$
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
-  userNameAdd();
+  const userNameParent = $(this).data("username");
+  const userAddedName = $("#comment-in")
+    .val()
+    .trim();
+  userAddedName
+    ? userNameAdd(userAddedName, userNameParent)
+    : $("#comment-in").attr({
+        placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
+      });
 });
 
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
-    userNameAdd();
+    const inputName = $("#comment-in")
+      .val()
+      .trim();
+    const inputId = $("#comment-in").data("input");
+    userNameAdd(inputName, inputId);
   }
 };
 
 const userNameAdd = (player, dataId) => {
-  const user = $("#comment-in")
-    .val()
-    .trim();
-
-  if (player) {
-    playerDisplay(player);
-    sendFirebase(player, dataId);
-    rpsButtons(name);
-    // otherPlayer(player);
-  }
-
-  if (user) {
-    playerDisplay(user);
-    sendFirebase(user, name);
-    rpsButtons(name);
-    $("#comment-in").val("");
-    otherPlayer(user);
-  } else {
-    $("#comment-in").attr({
-      placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
-    });
-  }
+  $("#no-button").remove();
+  playerDisplay(player, dataId);
+  sendFirebase(player, dataId);
+  rpsButtons(dataId);
 };
 
 // ^^^^^^^^^^^^^ Other Player ^^^^^^^^^^^^^
@@ -159,14 +159,8 @@ const sendFirebase = (userName, player) => {
     });
 };
 
-// const game = {
-//   playerArr: [],
-//   playerObj: {},
-//   guess: ""
-// };
-
-const playerDisplay = data => {
-  $("#player-1").text(`Welcome ${data}! Make your selection!`);
+const playerDisplay = (player, id) => {
+  $(`#player-1[data-play=${id}]`).text(`Welcome ${player}! Make your selection!`);
   // $("#player-2").remove();
   $("#comment-in").remove();
   $("#submit-button").remove();
@@ -191,15 +185,15 @@ const guessSubmit = (id, guess) => {
     .update({ guess: guess })
     .then(() => {
       console.log("guess updated");
-      if (
-        typeof rpsObj.player1.guess === "number" &&
-        typeof rpsObj.player2.guess === "number"
-      )
-        rpsLogic(rpsObj.player1.guess, rpsObj.player2.guess);
+      // if (
+      //   typeof rpsObj.player1.guess === "number" &&
+      //   typeof rpsObj.player2.guess === "number"
+      // )
+        // rpsLogic(rpsObj.player1.guess, rpsObj.player2.guess);
     })
     .catch(err => console.log(err));
-  console.log(typeof rpsObj.player1.guess);
-  console.log(typeof rpsObj.player2.guess);
+  // console.log(typeof rpsObj.player1.guess);
+  // console.log(typeof rpsObj.player2.guess);
 };
 
 // ############# CLEAR DATABASE #############
