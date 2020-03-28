@@ -60,19 +60,19 @@ const playerCreate = () => {
     playerArr.push(snapshot.key);
   });
 
-  console.log(playerId);
   console.log(playerArr);
 
   $("#player-1").text("Welcome! add a username?");
   // add data-play to display for different players
-  $("#player-1, #player-2").attr({ "data-play": playerArr[players - 1] });
+  const playerId = playerArr[players - 1];
+  $("#player-1, #player-2").attr({ "data-play": playerId });
   // console.log($(""))
   $("#comment-in").attr({ placeholder: "enter username" });
   const noBtn = $("<button>")
-    .attr({ id: "no-button" })
+    .attr({ id: "no-button", "data-no": playerId })
     .text("no thanks");
   const userNameBtn = $("<button>")
-    .attr({ id: "username-button", type: "submit" })
+    .attr({ id: "username-button", type: "submit", "data-username": playerId })
     .text("submit");
   $("#player-2").append(noBtn);
   $("#submit-button").append(userNameBtn);
@@ -82,11 +82,13 @@ const playerCreate = () => {
 // XXXXXXXXXXXXX No thanks button XXXXXXXXXXXXX
 $(document).on("click", "#no-button", function(event) {
   event.preventDefault();
-  // let player;
+  const noUserName = $(this).data("no");
+  console.log(`no button ${noUserName}`);
+  const player = `player ${rpsObj[noUserName].player}`;
   // rpsObj.player1.username || rpsObj.player2.username
   //   ? (player = `player 2`)
   //   : (player = `player 1`);
-  // userNameAdd(player);
+  userNameAdd(player, noUserName);
 });
 
 // $$$$$$$$$$$$$ enter user name $$$$$$$$$$$$$
@@ -101,19 +103,16 @@ const checkSubmit = e => {
   }
 };
 
-const userNameAdd = player => {
+const userNameAdd = (player, dataId) => {
   const user = $("#comment-in")
     .val()
     .trim();
 
-  let name;
-  rpsObj.players === 1 ? (name = "player1") : (name = "player2");
-
   if (player) {
     playerDisplay(player);
-    sendFirebase(player, name);
+    sendFirebase(player, dataId);
     rpsButtons(name);
-    otherPlayer(player);
+    // otherPlayer(player);
   }
 
   if (user) {
