@@ -46,15 +46,15 @@
   grid-area: comment-out;
 }
 
-#r {
+#rock {
   grid-area: 3 / 1 / 5 / 2;
   display: none
 }
-#p {
+#paper {
   grid-area: 3 / 2 / 5 / 3;
   display: none
 }
-#s {
+#scissors {
   grid-area: 3 / 3 / 5 / 4;
   display: none
 }
@@ -63,6 +63,7 @@ button,
 .rps-buttons {
   border: solid 1px blue;
   border-radius: 4px;
+  /* display: none */
 }
 
 input {
