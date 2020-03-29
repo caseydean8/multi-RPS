@@ -46,7 +46,7 @@
   grid-area: comment-out;
 }
 
-#rock {
+#rock, #win-loss-1 {
   grid-area: 3 / 1 / 5 / 2;
   display: none
 }
@@ -54,7 +54,7 @@
   grid-area: 3 / 2 / 5 / 3;
   display: none
 }
-#scissors {
+#scissors, #win-loss-2 {
   grid-area: 3 / 3 / 5 / 4;
   display: none
 }

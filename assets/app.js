@@ -208,36 +208,53 @@ const rpsLogic = (player1, player2) => {
   const guess2 = player2.guess;
   console.log(guess1, guess2);
   let plr1wins = rpsObj[playerArr[1]].wins;
-  console.log(playerArr[1]);
-  console.log(plr1wins);
   let plr1losses = rpsObj[playerArr[1]].losses;
   let plr2wins = rpsObj[playerArr[0]].wins;
   let plr2losses = rpsObj[playerArr[0]].losses;
+  let oppoDisplay = "it's a tie!";
   if (guess1 === guess2) {
     $(`#player-1[data-play=${playerArr[1]}]`).text("It's a tie");
     $(`#player-1[data-play=${playerArr[0]}]`).text("It's a tie");
-    // tie();
+    db.ref(playerArr[1]).update({ display2: oppoDisplay });
+    db.ref(playerArr[0]).update({ display2: oppoDisplay });
   } else if ((guess1 - guess2 + 3) % 3 === 1) {
     $(`#player-1[data-play=${playerArr[1]}]`).text(`you win!`);
     $(`#player-1[data-play=${playerArr[0]}]`).text(`you lose!`);
-
+    oppoDisplay = "YOU LOSE";
     plr1wins++;
     plr2losses++;
-    
+    db.ref(playerArr[0]).update({ display2: oppoDisplay });
   } else {
     $(`#player-1[data-play=${playerArr[1]}]`).text(`you lose!`);
     $(`#player-1[data-play=${playerArr[0]}]`).text(`you win!`);
-    // db.ref("").update({})
-    // db.ref("").update({})
+    oppoDisplay = "YOU WIN";
+    plr1losses++;
+    plr2wins++;
+    db.ref(playerArr[1]).update({ display2: oppoDisplay });
   }
+
   db.ref(playerArr[1])
-      .update({ winHold: false, wins: plr1wins })
-      .then(() => console.log("player 1 updated"))
-      .catch(err => console.log(err));
-    db.ref(playerArr[0])
-      .update({ winHold: false, losses: plr2losses })
-      .then(() => console.log("player 2 updated"))
-      .catch(err => console.log(err));
+    .update({ winHold: false, losses: plr1losses, wins: plr1wins })
+    .then(() => console.log("player 1 win/loss updated"))
+    .catch(err => console.log(err));
+  db.ref(playerArr[0])
+    .update({ winHold: false, losses: plr2losses, wins: plr2wins })
+    .then(() => console.log("player 2 win/loss updated"))
+    .catch(err => console.log(err));
+
+  winDisplay();
+  console.log(gameObArr);
+};
+
+const winDisplay = () => {
+  $(".rps-buttons").css({ display: "none" });
+  $(".win-loss-column").css({ display: "block" });
+  let p1 = rpsObj[playerArr[1]];
+  let p2 = rpsObj[playerArr[0]];
+  $("#win-loss-1").text(`wins: ${p1.wins}
+  losses: ${p1.losses}`);
+  $("#win-loss-2").text(`wins: ${p2.wins}
+  losses: ${p2.losses}`);
 };
 
 db.ref().on("child_changed", snapshot => {
