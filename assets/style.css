@@ -26,7 +26,7 @@
 #player-2 {
   grid-area: player-2;
 }
-#comment-in {
+#add-username {
   grid-area: comment-in;
   display: none;
 }
@@ -36,7 +36,7 @@
 #rock {
   grid-area: rock;
 }
-#paper {
+#reset {
   grid-area: paper;
 }
 #clear {
@@ -46,17 +46,24 @@
   grid-area: comment-out;
 }
 
-#rock, #win-loss-1 {
+#comment-in {
+  grid-area: 4 / 1 / 5 / 4;
+  display: none;
+}
+
+#rock,
+#win-loss-1 {
   grid-area: 3 / 1 / 5 / 2;
-  display: none
+  display: none;
 }
 #paper {
   grid-area: 3 / 2 / 5 / 3;
-  display: none
+  display: none;
 }
-#scissors, #win-loss-2 {
+#scissors,
+#win-loss-2 {
   grid-area: 3 / 3 / 5 / 4;
-  display: none
+  display: none;
 }
 
 button,

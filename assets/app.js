@@ -19,8 +19,25 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let rpsObj = {};
-
+console.log(rpsObj.key);
 const gameObArr = [];
+
+function closeIt() {
+  console.log("refresh test");
+}
+
+const pageRefresh = () => {
+  console.log("page refresh");
+  // db.ref().on("value", snapshot => {
+  //   console.log(snapshot.val().player);
+  //   if (snapshot.val()) pageDisplay(playerArr[0]);
+  //   // location.reload;
+  // })
+  // if (playerArr.length > 0) pageDisplay(playerArr[0]);
+  if (rpsObj[p1Id]) pageDisplay(p1Id);
+};
+
+window.onload = pageRefresh;
 
 // >>>>>>>>>>>>>> Start Button Step 1>>>>>>>>>>>>>>>>
 $("#start").on("click", function(event) {
@@ -30,15 +47,16 @@ $("#start").on("click", function(event) {
 
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
-  // console.log(rpsObj);
+  console.log(rpsObj);
+  // console.log(snapshot.child());
+  // let playKey = snapshot.key;
+  // console.log(playKey);
+  // playerArr.unshift(playKey);
+  // console.log(playerArr);
 });
 
-const pageRefresh = () => {
-  console.log("page refresh");
-  console.log(rpsObj.players);
-  if (rpsObj.players > 0) pageDisplay();
-};
 const playerArr = [];
+// console.log(playerArr);
 let p1Id = playerArr[1];
 let p2Id = playerArr[0];
 
@@ -53,8 +71,12 @@ const playerCreate = () => {
     wins: 0,
     winHold: true
   };
-  db.ref().push(dbPlayer);
-  let dbRef = "";
+
+  db.ref()
+    .push(dbPlayer)
+    .then(() => console.log("player object sent to firebase"))
+    .catch(err => console.log(err));
+  let dbRef;
   db.ref().on("child_added", snapshot => {
     dbRef = snapshot.key;
     playerArr.unshift(dbRef);
@@ -68,21 +90,22 @@ const playerCreate = () => {
 
 // Display after Start Button, UX Step 2
 const pageDisplay = id => {
-  $("#comment-in").css({ display: "block" });
+  $("#add-username").css({ display: "block" });
   $("#start").remove();
   $("#player-1").text("Welcome! add a username?");
   // add data-play to display for different players
   // const playerId = playerArr[rpsObj.players - 1];
   $("#player-1, #player-2").attr({ "data-play": id });
-  $("#comment-in").attr({ placeholder: "enter username" });
+  $("#add-username").attr({ placeholder: "enter username" });
   const noBtn = $("<button>")
     .attr({ id: "no-button", "data-no": id })
     .text("no thanks");
   const userNameBtn = $("<button>")
     .attr({ id: "username-button", type: "submit", "data-username": id })
     .text("submit");
-  $("#comment-in").attr({ "data-input": id });
+  $("#add-username").attr({ "data-input": id });
   $(".rps-buttons").attr({ "data-player": id });
+  $(".win-loss-column").attr({ "data-win": id });
   $("#player-2").append(noBtn);
   $("#submit-button").append(userNameBtn);
 };
@@ -100,24 +123,24 @@ $(document).on("click", "#no-button", function(event) {
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
   const userNameParent = $(this).data("username");
-  const userAddedName = $("#comment-in")
+  const userAddedName = $("#add-username")
     .val()
     .trim();
   if (userAddedName) {
     userNameAdd(userAddedName, userNameParent);
     sendFirebase(userAddedName, userNameParent);
   } else
-    $("#comment-in").attr({
+    $("#add-username").attr({
       placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
     });
 });
 
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
-    const inputName = $("#comment-in")
+    const inputName = $("#add-username")
       .val()
       .trim();
-    const inputId = $("#comment-in").data("input");
+    const inputId = $("#add-username").data("input");
     userNameAdd(inputName, inputId);
     sendFirebase(inputName, inputId);
   }
@@ -156,7 +179,7 @@ const playerDisplay = (player, id) => {
   db.ref(id).update({ display1: text });
   $(`#player-1[data-play=${id}]`).text(text);
 
-  $("#comment-in").remove();
+  $("#add-username").remove();
   $("#submit-button").remove();
 };
 
@@ -246,15 +269,23 @@ const rpsLogic = (player1, player2) => {
   console.log(gameObArr);
 };
 
+// Win Loss Comment Display
 const winDisplay = () => {
   $(".rps-buttons").css({ display: "none" });
   $(".win-loss-column").css({ display: "block" });
-  let p1 = rpsObj[playerArr[1]];
-  let p2 = rpsObj[playerArr[0]];
-  $("#win-loss-1").text(`wins: ${p1.wins}
-  losses: ${p1.losses}`);
-  $("#win-loss-2").text(`wins: ${p2.wins}
-  losses: ${p2.losses}`);
+  const win = $(".win-loss-column").data("win");
+  let loss;
+  playerArr.forEach(id => {
+    if (id != win) loss = id;
+  })
+  const winner = rpsObj[win];
+  const loser = rpsObj[loss];
+  $("#win-loss-1").text(`wins: ${winner.wins}
+  losses: ${winner.losses}`);
+  $("#win-loss-2").text(`wins: ${loser.wins}
+  losses: ${loser.losses}`);
+  $("#comment-in").css({ display: "block" });
+  $("#comment-in").attr({ placeholder: "add comment" });
 };
 
 db.ref().on("child_changed", snapshot => {
