@@ -7,7 +7,7 @@
   height: 100vh;
   grid-template-areas:
     "header header header"
-    "player-1 player-1 player-2"
+    "player-1 player-1 opponent"
     "comment-in comment-in comment-in"
     ". . submit-button"
     "rock paper scissors"
@@ -19,18 +19,19 @@
 }
 #start {
   grid-area: 2 / 1 / 3 / 4;
+  display: none;
 }
 #player-1 {
   grid-area: player-1;
 }
-#player-2 {
-  grid-area: player-2;
+#opponent, #no-button {
+  grid-area: opponent;
 }
 #add-username {
   grid-area: comment-in;
-  display: none;
+  /* display: none; */
 }
-#submit-button {
+#username-button {
   grid-area: submit-button;
 }
 #rock {

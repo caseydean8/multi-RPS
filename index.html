@@ -11,17 +11,17 @@
 <body>
   <div class="parent">
     <div id="header">rock paper scissors</div>
-    <button id="start">start</button>
-    <div id="player-1"></div>
-    <div id="player-2"></div>
-    <input id="add-username" type="text" onkeyup="return checkSubmit(event)" required />
+    <div id="player">Welcome! Add username?</div>
+    <div id="opponent"></div>
+    <button id="no-button">No thanks</button>
+    <input id="add-username" type="text" placeholder="add username" onkeyup="return checkSubmit(event)" required />
     <input id="comment-in" type="text" onkeyup="return checkSubmit(event)" required />
-    <div id="submit-button"></div>
-    <button id="rock" class="rps-buttons">rock</button>
-    <button id="paper" class="rps-buttons">paper</button>
-    <button id="scissors" class="rps-buttons">scissors</button>
-    <div id="win-loss-1" class="win-loss-column"></div>
-    <div id="win-loss-2" class="win-loss-column"></div>
+    <button id="username-button">submit</button>
+    <button id="rock" class="rps-buttons" data-choice="0">rock</button>
+    <button id="paper" class="rps-buttons" data-choice="1">paper</button>
+    <button id="scissors" class="rps-buttons" data-choice="2">scissors</button>
+    <div id="win-loss" class="win-loss-column"></div>
+    <div id="win-loss-opponent" class="win-loss-column"></div>
     <button class="" id="clear">clear database</button>
     <button id="reset">reset</button>
     <div id="comment-out"></div>
