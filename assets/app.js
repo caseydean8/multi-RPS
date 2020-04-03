@@ -23,7 +23,7 @@ const gameObArr = [];
 const persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
   console.log("page refresh");
-  $(".parent").attr({ "data-player": persist });
+  $(".parent, #header").attr({ "data-player": persist });
 };
 
 window.onload = pageRefresh;
@@ -54,9 +54,10 @@ const playerCreate = username => {
     db.ref().update({ state: 1 });
     db.ref("player1")
       .update({ userName: username })
-      .then(() => {
-        $(".parent").attr({ "data-player": "player1" });
-      })
+      // .then(() => {
+      //   $(".parent").attr({ "data-player": "player1" });
+      //   $("#header").attr({ "data-player": "player1" });
+      // })
       .then(() => playerDisplay("player1", 1));
     sessionStorage.setItem(player, "player1");
   } else if (rpsObj.state === 1) {
@@ -67,9 +68,10 @@ const playerCreate = username => {
         userName: username,
         opponent: rpsObj.player1.userName
       })
-      .then(() => {
-        $(".parent").attr({ "data-player": "player2" });
-      })
+      // .then(() => {
+      //   $(".parent").attr({ "data-player": "player2" });
+      //   $("#header").attr({ "data-player": "player2" });
+      // })
       .then(() => playerDisplay("player2", 2));
     sessionStorage.setItem(player, "player2");
   }
@@ -169,7 +171,6 @@ $(document).on("click", ".rps-buttons", function(event) {
     .parent()
     .data("player");
   guessSubmit(id, dbGuess, guess);
-  // $("#header").text(`You chose ${guess}`);
 });
 
 const guessSubmit = (id, guess, display) => {
@@ -245,26 +246,24 @@ const rpsLogic = () => {
   let plr1losses = rpsObj.player1.losses;
   let plr2wins = rpsObj.player2.wins;
   let plr2losses = rpsObj.player2.losses;
-  let oppoDisplay = "it's a tie!";
+  const header1 = $(".parent").data("player");
+  let header2 = "";
+  header1 === "player1" ? (header2 = "player2") : (header2 = "player1");
+  $("#header").text("");
   if (guess1 === guess2) {
     $(`#header`).text("It's a tie");
-    // $(`#player-1[data-play=${playerArr[0]}]`).text("It's a tie");
-    // db.ref(playerArr[1]).update({ display2: oppoDisplay });
-    // db.ref(playerArr[0]).update({ display2: oppoDisplay });
   } else if ((guess1 - guess2 + 3) % 3 === 1) {
-    $(`#player-1[data-play=${playerArr[1]}]`).text(`you win!`);
-    $(`#player-1[data-play=${playerArr[0]}]`).text(`you lose!`);
-    // oppoDisplay = "YOU LOSE";
+    $(`#header[data-player="player1"]`).text(`you win!`);
+    $(`#header[data-player="player2"]`).text(`you lose!`);
+
     plr1wins++;
     plr2losses++;
-    // db.ref(playerArr[0]).update({ display2: oppoDisplay });
   } else {
-    $(`#player-1[data-play=${playerArr[1]}]`).text(`you lose!`);
-    $(`#player-1[data-play=${playerArr[0]}]`).text(`you win!`);
-    // oppoDisplay = "YOU WIN";
+    $(`#header[data-player="player1"]`).text(`you lose!`);
+    $(`#header[data-player="player2"]`).text(`you win!`);
+
     plr1losses++;
     plr2wins++;
-    // db.ref(playerArr[1]).update({ display2: oppoDisplay });
   }
 
   db.ref("player1")
@@ -277,7 +276,6 @@ const rpsLogic = () => {
     .catch(err => console.log(err));
 
   winDisplay();
-  // console.log(gameObArr);
 };
 
 // Win Loss Comment Display
@@ -305,8 +303,7 @@ db.ref().on("child_changed", snapshot => {
     // location.reload();
     playerDisplay("player1", 2);
     // playerCreate(rpsObj.player2.userName);
-  } else if (otherPage === 4)
-    rpsLogic();
+  } else if (otherPage === 4) rpsLogic();
 });
 
 const guessesIn = () => {
