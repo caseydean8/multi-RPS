@@ -148,6 +148,7 @@ const playerDisplay = (dataPlayer, state) => {
   $("#no-button").css({ display: "none" });
   $("#no-button, #username-button").css({ display: "none" });
   $("#add-username").attr({ placeholder: "add comment" });
+  $(".rps-buttons").css({display: "block"});
 };
 
 // const playerAdded = id => {
