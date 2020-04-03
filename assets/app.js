@@ -76,13 +76,11 @@ const playerCreate = username => {
 
 // Display after Start Button, UX Step 2
 const pageDisplay = id => {
-  
   $("#player-1, #opponent").attr({ "data-play": id });
-  
+
   $("#add-username").attr({ "data-input": id });
   $(".rps-buttons").attr({ "data-player": id });
   $(".win-loss-column").attr({ "data-win": id });
- 
 };
 
 // $$$$$$$$$$$$$ enter user name $$$$$$$$$$$$$
@@ -139,16 +137,17 @@ const sendFirebase = (userName, id) => {
 
 const playerDisplay = (dataPlayer, state) => {
   console.log(dataPlayer);
-  console.log('=== player display hit ===')
-  console.log(rpsObj)
+  console.log("=== player display hit ===");
+  console.log(rpsObj);
   $("#player").text(`${rpsObj[dataPlayer].userName}`);
-  state > 1
-    ? $("#opponent").text(`vs ${rpsObj[dataPlayer].opponent}`)
-    : $("#opponent").text(`awaiting 2nd player`);
+  if (state > 1) {
+    $("#opponent").text(`vs ${rpsObj[dataPlayer].opponent}`);
+    $(".rps-buttons").css({ display: "block" });
+  } else $("#opponent").text(`awaiting 2nd player`);
+
   $("#no-button").css({ display: "none" });
   $("#no-button, #username-button").css({ display: "none" });
   $("#add-username").attr({ placeholder: "add comment" });
-  $(".rps-buttons").css({display: "block"});
 };
 
 // const playerAdded = id => {
@@ -163,7 +162,9 @@ $(document).on("click", ".rps-buttons", function(event) {
   let dbGuess = 0;
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
-  const id = $(this).parent().data("player");
+  const id = $(this)
+    .parent()
+    .data("player");
   guessSubmit(id, dbGuess);
   $("#player").text(`You chose ${guess}`);
 });
@@ -182,9 +183,14 @@ const guessSubmit = (id, guess) => {
 
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
-
+  const dbDefault = {
+    userName: "",
+    opponent: "",
+    guess: null,
+    hasGuessed: false
+  };
   db.ref("player1")
-    .update({ userName: "", opponent: "" })
+    .update(dbDefault)
     .then(function() {
       location.reload();
     })
@@ -193,7 +199,7 @@ $(document).on("click", "#clear", function(event) {
     });
 
   db.ref("player2")
-    .update({ userName: "", opponent: "" })
+    .update(dbDefault)
     .then(function() {
       location.reload();
     })
@@ -278,7 +284,7 @@ const winDisplay = () => {
 // ************* CHILD CHANGED *************
 db.ref().on("child_changed", snapshot => {
   let otherPage = snapshot.val();
-  console.log('---child changed---')
+  console.log("---child changed---");
   console.log(otherPage);
   if (rpsObj.state === 2) {
     console.log("child changed state === 2");
