@@ -163,9 +163,9 @@ $(document).on("click", ".rps-buttons", function(event) {
   let dbGuess = 0;
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
-  const id = $(this).data("player");
+  const id = $(this).parent().data("player");
   guessSubmit(id, dbGuess);
-  $("#player-1").text(`You chose ${guess}`);
+  $("#player").text(`You chose ${guess}`);
 });
 
 const guessSubmit = (id, guess) => {
