@@ -23,7 +23,7 @@ const gameObArr = [];
 const persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
   console.log("page refresh");
-  $(".parent").attr({"data-player": persist});
+  $(".parent").attr({ "data-player": persist });
 };
 
 window.onload = pageRefresh;
@@ -182,8 +182,12 @@ const guessSubmit = (id, guess) => {
     })
     .then(() => guessesIn())
     .catch(err => console.log(err));
-  if (id != "player2") {
+  console.log("game object below---");
+  console.log(rpsObj.state);
+  if (rpsObj.state === 2) {
     db.ref().update({ state: 3 });
+  } else if (rpsObj.state === 3) {
+    db.ref().update({ state: 4 });
   }
 };
 
