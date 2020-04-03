@@ -49,7 +49,7 @@
 
 #comment-in {
   grid-area: 4 / 1 / 5 / 4;
-  display: none;
+  /* display: none; */
 }
 
 #rock,

@@ -19,40 +19,27 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let rpsObj = {};
-console.log(rpsObj.key);
 const gameObArr = [];
-
-function closeIt() {
-  console.log("refresh test");
-}
 
 const pageRefresh = () => {
   console.log("page refresh");
-  // db.ref().on("value", snapshot => {
-  //   console.log(snapshot.val().player);
-  //   if (snapshot.val()) pageDisplay(playerArr[0]);
-  //   // location.reload;
-  // })
-  // if (playerArr.length > 0) pageDisplay(playerArr[0]);
   if (rpsObj[p1Id]) pageDisplay(p1Id);
 };
 
-window.onload = pageRefresh;
+// window.onload = pageRefresh;
 
 // >>>>>>>>>>>>>> Start Button Step 1>>>>>>>>>>>>>>>>
 $("#no-button").on("click", function(event) {
   event.preventDefault();
-  playerCreate();
+  rpsObj.state === 0 ? playerCreate("player 1") : playerCreate("player 2");
 });
 
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   console.log(rpsObj);
-  // console.log(snapshot.child());
-  // let playKey = snapshot.key;
-  // console.log(playKey);
-  // playerArr.unshift(playKey);
-  // console.log(playerArr);
+  // if (rpsObj.state === 1) {
+  //   playerDisplay(rpsObj.player1.userName, 1)
+  // }
 });
 
 const playerArr = [];
@@ -61,84 +48,51 @@ let p1Id = playerArr[1];
 let p2Id = playerArr[0];
 
 // Send Player object to database Step 1.1
-const playerCreate = () => {
-  const dbPlayer = {
-    comment: "",
-    losses: 0,
-    hasGuessed: false,
-    display1: "",
-    display2: "",
-    wins: 0,
-    winHold: true
-  };
-
-  db.ref()
-    .push(dbPlayer)
-    .then(() => console.log("player object sent to firebase"))
-    .catch(err => console.log(err));
-  let dbRef;
-  db.ref().on("child_added", snapshot => {
-    dbRef = snapshot.key;
-    playerArr.unshift(dbRef);
-    gameObArr.unshift(snapshot.val());
-    console.log(gameObArr);
-  });
-  console.log(playerArr);
-  db.ref(dbRef).update({
-    player: playerArr.length,
-    userName: `player ${playerArr.length}`
-  });
-  pageDisplay(dbRef);
-  userNameAdd(rpsObj[dbRef].userName, dbRef);
+const playerCreate = username => {
+  // console.log(rpsObj.state);
+  if (rpsObj.state === 0) {
+    db.ref().update({ state: 1 });
+    db.ref("player1")
+      .update({ userName: username })
+      .then(() => {
+        $(".parent").attr({ "data-player": "player1" });
+      })
+      .then(() => playerDisplay("player1", 1));
+    // $("#opponent").text("waiting for opponent");
+  } else if (rpsObj.state === 1) {
+    db.ref().update({ state: 2 });
+    db.ref("player1").update({ opponent: username });
+    db.ref("player2")
+      .update({
+        userName: username,
+        opponent: rpsObj.player1.userName
+      })
+      .then(() => {
+        $(".parent").attr({ "data-player": "player2" });
+      })
+      .then(() => playerDisplay("player2", 2));
+  }
 };
 
 // Display after Start Button, UX Step 2
 const pageDisplay = id => {
-  // $("#add-username").css({ display: "block" });
-  // $("#start").remove();
-  // $("#player-1").text("Welcome! add a username?");
-  // add data-play to display for different players
+  
   $("#player-1, #opponent").attr({ "data-play": id });
-  // $("#add-username").attr({ placeholder: "enter username" });
-  // const noBtn = $("<button>")
-  //   .attr({ id: "no-button", "data-no": id })
-  //   .text("no thanks");
-  // const userNameBtn = $("<button>")
-  //   .attr({ id: "username-button", type: "submit", "data-username": id })
-  //   .text("submit");
+  
   $("#add-username").attr({ "data-input": id });
   $(".rps-buttons").attr({ "data-player": id });
   $(".win-loss-column").attr({ "data-win": id });
-  // $("#opponent").append(noBtn);
-  // $("#submit-button").append(userNameBtn);
+ 
 };
-
-// XXXXXXXXXXXXX No thanks button XXXXXXXXXXXXX
-// $(document).on("click", "#no-button", function(event) {
-//   event.preventDefault();
-//   const noUserName = $(this).data("no");
-//   const player = `player ${rpsObj[noUserName].player}`;
-//   userNameAdd(player, noUserName);
-//   sendFirebase(player, noUserName);
-// });
 
 // $$$$$$$$$$$$$ enter user name $$$$$$$$$$$$$
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
-  // const userNameParent = $(this).data("username");
-  playerCreate();
-  let userId;
-  db.ref().on("child_added", function(snapshot) {
-    userId = snapshot.key;
-    console.log(userId);
-  });
   const userAddedName = $("#add-username")
     .val()
     .trim();
   if (userAddedName) {
-    db.ref(userId).update({ userName: userAddedName });
-    // userNameAdd(userAddedName, userNameParent);
-    // sendFirebase(userAddedName, userNameParent);
+    playerCreate(userAddedName);
   } else
     $("#add-username").attr({
       placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
@@ -150,9 +104,7 @@ const checkSubmit = e => {
     const inputName = $("#add-username")
       .val()
       .trim();
-    const inputId = $("#add-username").data("input");
-    userNameAdd(inputName, inputId);
-    // sendFirebase(inputName, inputId);
+    playerCreate(inputName);
   }
 };
 
@@ -185,18 +137,22 @@ const sendFirebase = (userName, id) => {
     });
 };
 
-const playerDisplay = (player, id) => {
-  const text = `Welcome ${player}! Make your selection!`;
-  // db.ref(id).update({ display1: text });
-  $(`#player-1[data-play=${id}]`).text(text);
-
-  $("#add-username").remove();
-  $("#submit-button").remove();
+const playerDisplay = (dataPlayer, state) => {
+  console.log(dataPlayer);
+  console.log('=== player display hit ===')
+  console.log(rpsObj)
+  $("#player").text(`${rpsObj[dataPlayer].userName}`);
+  state > 1
+    ? $("#opponent").text(`vs ${rpsObj[dataPlayer].opponent}`)
+    : $("#opponent").text(`awaiting 2nd player`);
+  $("#no-button").css({ display: "none" });
+  $("#no-button, #username-button").css({ display: "none" });
+  $("#add-username").attr({ placeholder: "add comment" });
 };
 
-const playerAdded = id => {
-  $(`player-1[data-play=${id}]`).text(rpsObj[id].display1);
-};
+// const playerAdded = id => {
+//   $(`player-1[data-play=${id}]`).text(rpsObj[id].display1);
+// };
 
 // $$$$$$$$$$$$$ ROCK PAPER SCISSORS Buttons $$$$$$$$$$$$$
 
@@ -225,9 +181,9 @@ const guessSubmit = (id, guess) => {
 
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
-  
-    db.ref("player1, player2")
-    .update({userName: ""})
+
+  db.ref("player1")
+    .update({ userName: "", opponent: "" })
     .then(function() {
       location.reload();
     })
@@ -235,23 +191,25 @@ $(document).on("click", "#clear", function(event) {
       console.log("Remove failed: " + error.message);
     });
 
-  // db.ref("player2")
-  //   .update({userName: ""})
-  //   .then(function() {
-  //     location.reload();
-  //   })
-  //   .catch(function(error) {
-  //     console.log("Remove failed: " + error.message);
-  //   });
+  db.ref("player2")
+    .update({ userName: "", opponent: "" })
+    .then(function() {
+      location.reload();
+    })
+    .catch(function(error) {
+      console.log("Remove failed: " + error.message);
+    });
 
   db.ref()
-    .update({state: 0})
+    .update({ state: 0 })
     .then(function() {
       location.reload();
     })
     .catch(function(error) {
       console.log("Remove failed: " + error.message);
     });
+
+  location.reload();
 });
 
 const rpsLogic = (player1, player2) => {
@@ -316,16 +274,18 @@ const winDisplay = () => {
   $("#comment-in").attr({ placeholder: "add comment" });
 };
 
+// ************* CHILD CHANGED *************
 db.ref().on("child_changed", snapshot => {
-  console.log("child changed below");
   let otherPage = snapshot.val();
+  console.log('---child changed---')
   console.log(otherPage);
-  if (otherPage.player === 2 && otherPage.userName && !otherPage.hasGuessed) {
-    playerArr.forEach(item => {
-      userNameAdd(rpsObj[item].userName, item);
-    });
+  if (rpsObj.state === 2) {
+    console.log("child changed state === 2");
+    // location.reload();
+    playerDisplay("player1", 2);
+    // playerCreate(rpsObj.player2.userName);
   }
-  if (otherPage.winHold) guessesIn();
+  // if (otherPage.winHold) guessesIn();
 });
 
 const guessesIn = () => {
