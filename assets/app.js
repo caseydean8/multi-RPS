@@ -20,13 +20,13 @@ const db = firebase.database();
 
 let rpsObj = {};
 const gameObArr = [];
-
+const persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
   console.log("page refresh");
-  if (rpsObj[p1Id]) pageDisplay(p1Id);
+  $(".parent").attr({"data-player": persist});
 };
 
-// window.onload = pageRefresh;
+window.onload = pageRefresh;
 
 // >>>>>>>>>>>>>> Start Button Step 1>>>>>>>>>>>>>>>>
 $("#no-button").on("click", function(event) {
@@ -58,7 +58,7 @@ const playerCreate = username => {
         $(".parent").attr({ "data-player": "player1" });
       })
       .then(() => playerDisplay("player1", 1));
-    // $("#opponent").text("waiting for opponent");
+    sessionStorage.setItem(player, "player1");
   } else if (rpsObj.state === 1) {
     db.ref().update({ state: 2 });
     db.ref("player1").update({ opponent: username });
@@ -71,6 +71,7 @@ const playerCreate = username => {
         $(".parent").attr({ "data-player": "player2" });
       })
       .then(() => playerDisplay("player2", 2));
+    sessionStorage.setItem(player, "player2");
   }
 };
 
@@ -136,6 +137,8 @@ const sendFirebase = (userName, id) => {
 };
 
 const playerDisplay = (dataPlayer, state) => {
+  const persist = sessionStorage.getItem(player);
+  console.log(persist);
   console.log(dataPlayer);
   console.log("=== player display hit ===");
   console.log(rpsObj);
@@ -170,6 +173,8 @@ $(document).on("click", ".rps-buttons", function(event) {
 });
 
 const guessSubmit = (id, guess) => {
+  console.log("=== guess submit ===");
+  console.log(id);
   db.ref(id)
     .update({ guess: guess, hasGuessed: true })
     .then(() => {
@@ -177,6 +182,9 @@ const guessSubmit = (id, guess) => {
     })
     .then(() => guessesIn())
     .catch(err => console.log(err));
+  if (id != "player2") {
+    db.ref().update({ state: 3 });
+  }
 };
 
 // ############# CLEAR DATABASE #############
