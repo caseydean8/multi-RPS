@@ -22,8 +22,11 @@ let rpsObj = {};
 const gameObArr = [];
 const persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
-  console.log("page refresh");
+  // console.log("page refresh");
   $(".parent, #header").attr({ "data-player": persist });
+  db.ref().on("value", snapshot => {
+    if (snapshot.val().state === 2) playerDisplay(2);
+  })
 };
 
 window.onload = pageRefresh;
@@ -36,54 +39,28 @@ $("#no-button").on("click", function(event) {
 
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
-  console.log(rpsObj);
-  // if (rpsObj.state === 1) {
-  //   playerDisplay(rpsObj.player1.userName, 1)
-  // }
+  console.log('rps object', rpsObj);
 });
-
-const playerArr = [];
-// console.log(playerArr);
-let p1Id = playerArr[1];
-let p2Id = playerArr[0];
 
 // Send Player object to database Step 1.1
 const playerCreate = username => {
-  // console.log(rpsObj.state);
   if (rpsObj.state === 0) {
     db.ref().update({ state: 1 });
     db.ref("player1")
       .update({ userName: username })
-      // .then(() => {
-      //   $(".parent").attr({ "data-player": "player1" });
-      //   $("#header").attr({ "data-player": "player1" });
-      // })
-      .then(() => playerDisplay("player1", 1));
+      .then(() => playerDisplay(1));
     sessionStorage.setItem(player, "player1");
   } else if (rpsObj.state === 1) {
-    db.ref().update({ state: 2 });
     db.ref("player1").update({ opponent: username });
     db.ref("player2")
-      .update({
-        userName: username,
-        opponent: rpsObj.player1.userName
-      })
-      // .then(() => {
-      //   $(".parent").attr({ "data-player": "player2" });
-      //   $("#header").attr({ "data-player": "player2" });
-      // })
-      .then(() => playerDisplay("player2", 2));
+    .update({
+      userName: username,
+      opponent: rpsObj.player1.userName
+    })
+    .then(() => playerDisplay(2));
+    db.ref().update({ state: 2 });
     sessionStorage.setItem(player, "player2");
   }
-};
-
-// Display after Start Button, UX Step 2
-const pageDisplay = id => {
-  $("#player-1, #opponent").attr({ "data-play": id });
-
-  $("#add-username").attr({ "data-input": id });
-  $(".rps-buttons").attr({ "data-player": id });
-  $(".win-loss-column").attr({ "data-win": id });
 };
 
 // $$$$$$$$$$$$$ enter user name $$$$$$$$$$$$$
@@ -109,44 +86,14 @@ const checkSubmit = e => {
   }
 };
 
-// 33333333333333 Step 3 Display 3333333333333
-const userNameAdd = (player, dataId) => {
-  $("#no-button").remove();
-  if (playerArr.length < 2)
-    $(`#opponent[data-play=${dataId}]`).text(`awaiting second player`);
-  if (playerArr.length === 2) {
-    playerArr.forEach(id => {
-      if (id != dataId) {
-        console.log(id);
-        $(`#opponent[data-play=${dataId}]`).text(`vs ${rpsObj[id].userName}`);
-      }
-    });
-  }
-  playerDisplay(player, dataId);
-  $(".rps-buttons").css({ display: "block" });
-};
-
-// %%%%%%%%%%%%% SEND FIREBASE %%%%%%%%%%%%%
-const sendFirebase = (userName, id) => {
-  db.ref(id)
-    .update({ userName: userName })
-    .then(function() {
-      console.log(`user name added`);
-    })
-    .catch(function(err) {
-      console.log(err);
-    });
-};
-
-const playerDisplay = (dataPlayer, state) => {
-  const persist = sessionStorage.getItem(player);
-  console.log(persist);
-  console.log(dataPlayer);
-  console.log("=== player display hit ===");
-  console.log(rpsObj);
-  $("#player").text(`${rpsObj[dataPlayer].userName}`);
+const playerDisplay = (state) => {
+  // const persist = sessionStorage.getItem(player);
+  // console.log(persist);
+  // console.log("=== player display hit ===");
+  // console.log(rpsObj);
+  $("#player").text(`${rpsObj[persist].userName}`);
   if (state > 1) {
-    $("#opponent").text(`vs ${rpsObj[dataPlayer].opponent}`);
+    $("#opponent").text(`vs ${rpsObj[persist].opponent}`);
     $(".rps-buttons").css({ display: "block" });
   } else $("#opponent").text(`awaiting 2nd player`);
 
@@ -171,6 +118,7 @@ $(document).on("click", ".rps-buttons", function(event) {
     .parent()
     .data("player");
   guessSubmit(id, dbGuess, guess);
+  $(".rps-buttons").css({ display: "none" });
 });
 
 const guessSubmit = (id, guess, display) => {
@@ -247,6 +195,8 @@ const rpsLogic = () => {
   let plr2wins = rpsObj.player2.wins;
   let plr2losses = rpsObj.player2.losses;
   const header1 = $(".parent").data("player");
+  console.log("--- rpslogic below ---");
+  console.log(header1);
   let header2 = "";
   header1 === "player1" ? (header2 = "player2") : (header2 = "player1");
   $("#header").text("");
@@ -296,22 +246,58 @@ const winDisplay = () => {
 // ************* CHILD CHANGED *************
 db.ref().on("child_changed", snapshot => {
   let otherPage = snapshot.val();
-  console.log("---child changed---");
-  console.log(otherPage);
-  if (rpsObj.state === 2) {
-    console.log("child changed state === 2");
-    // location.reload();
-    playerDisplay("player1", 2);
+  console.log("---child changed---", otherPage);
+  if (otherPage === 2) {
+    playerDisplay(2);
     // playerCreate(rpsObj.player2.userName);
   } else if (otherPage === 4) rpsLogic();
 });
 
-const guessesIn = () => {
-  const p1 = rpsObj[playerArr[1]];
-  const p2 = rpsObj[playerArr[0]];
-  if (playerArr.length === 2) {
-    if (p1.hasGuessed && p2.hasGuessed) {
-      rpsLogic(p1, p2);
-    }
-  }
-};
+// XXXXXXXXXX NOT USED XXXXXXXXXXXXXXXXXXXXXX
+// const guessesIn = () => {
+//   const p1 = rpsObj[playerArr[1]];
+//   const p2 = rpsObj[playerArr[0]];
+//   if (playerArr.length === 2) {
+//     if (p1.hasGuessed && p2.hasGuessed) {
+//       rpsLogic(p1, p2);
+//     }
+//   }
+// };
+
+// 33333333333333 Step 3 Display 3333333333333
+// const userNameAdd = (player, dataId) => {
+//   $("#no-button").remove();
+//   if (playerArr.length < 2)
+//     $(`#opponent[data-play=${dataId}]`).text(`awaiting second player`);
+//   if (playerArr.length === 2) {
+//     playerArr.forEach(id => {
+//       if (id != dataId) {
+//         console.log(id);
+//         $(`#opponent[data-play=${dataId}]`).text(`vs ${rpsObj[id].userName}`);
+//       }
+//     });
+//   }
+//   playerDisplay(player, dataId);
+//   $(".rps-buttons").css({ display: "block" });
+// };
+
+// %%%%%%%%%%%%% SEND FIREBASE %%%%%%%%%%%%%
+// const sendFirebase = (userName, id) => {
+//   db.ref(id)
+//     .update({ userName: userName })
+//     .then(function() {
+//       console.log(`user name added`);
+//     })
+//     .catch(function(err) {
+//       console.log(err);
+//     });
+// };
+
+// Display after Start Button, UX Step 2
+// const pageDisplay = id => {
+//   $("#player-1, #opponent").attr({ "data-play": id });
+
+//   $("#add-username").attr({ "data-input": id });
+//   $(".rps-buttons").attr({ "data-player": id });
+//   $(".win-loss-column").attr({ "data-win": id });
+// };
