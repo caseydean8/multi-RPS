@@ -25,11 +25,25 @@ const pageRefresh = () => {
   // console.log("page refresh");
   $(".parent, #header").attr({ "data-player": persist });
   db.ref().on("value", snapshot => {
-    if (snapshot.val().state === 2) playerDisplay(2);
-  })
+    let start = snapshot.val().state;
+    // if (!start) defaultState();
+    if (start === 2) playerDisplay(2);
+  });
 };
 
 window.onload = pageRefresh;
+
+const defaultState = () => {
+  // location.reload();
+  $("#player").text("Welcome! Add user name?");
+  $("#no-button")
+    .css({ display: "block" })
+    .text("no thanks");
+  $("#add-username").attr({ placeholder: "add username" });
+  $("#username-button")
+    .css({ display: "block" })
+    .text("submit user name");
+};
 
 // >>>>>>>>>>>>>> Start Button Step 1>>>>>>>>>>>>>>>>
 $("#no-button").on("click", function(event) {
@@ -39,7 +53,8 @@ $("#no-button").on("click", function(event) {
 
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
-  console.log('rps object', rpsObj);
+  console.log("rps object", rpsObj);
+  if (!rpsObj.state) defaultState();
 });
 
 // Send Player object to database Step 1.1
@@ -53,11 +68,11 @@ const playerCreate = username => {
   } else if (rpsObj.state === 1) {
     db.ref("player1").update({ opponent: username });
     db.ref("player2")
-    .update({
-      userName: username,
-      opponent: rpsObj.player1.userName
-    })
-    .then(() => playerDisplay(2));
+      .update({
+        userName: username,
+        opponent: rpsObj.player1.userName
+      })
+      .then(() => playerDisplay(2));
     db.ref().update({ state: 2 });
     sessionStorage.setItem(player, "player2");
   }
@@ -86,7 +101,7 @@ const checkSubmit = e => {
   }
 };
 
-const playerDisplay = (state) => {
+const playerDisplay = state => {
   // const persist = sessionStorage.getItem(player);
   // console.log(persist);
   // console.log("=== player display hit ===");
@@ -99,7 +114,10 @@ const playerDisplay = (state) => {
 
   $("#no-button").css({ display: "none" });
   $("#no-button, #username-button").css({ display: "none" });
-  $("#add-username").attr({ placeholder: "add comment" });
+
+  $("#add-username")
+    .val("")
+    .attr({ placeholder: "add comment" });
 };
 
 // const playerAdded = id => {
