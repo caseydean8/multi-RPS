@@ -19,8 +19,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let rpsObj = {};
-const gameObArr = [];
-// sessionStorage.setItem(player, "player1");
+
 let persist = sessionStorage.getItem(player);
 
 const pageRefresh = () => {
@@ -246,10 +245,10 @@ const rpsLogic = () => {
   let oppoOutcome;
   if (guess1 === guess2) {
     outcome = "tie";
-    oppoOutcome ="tie"
+    oppoOutcome = "tie";
   } else if ((guess1 - guess2 + 3) % 3 === 1) {
     outcome = "win";
-    oppoOutcome = "lose"
+    oppoOutcome = "lose";
     plr1wins++;
     plr2losses++;
   } else {
@@ -260,14 +259,24 @@ const rpsLogic = () => {
   }
 
   db.ref("player1")
-    .update({ winHold: false, losses: plr1losses, wins: plr1wins, outcome: outcome})
+    .update({
+      winHold: false,
+      losses: plr1losses,
+      wins: plr1wins,
+      outcome: outcome
+    })
     .then(() => console.log("player 1 win/loss updated"))
     .catch(err => console.log(err));
   db.ref("player2")
-    .update({ winHold: false, losses: plr2losses, wins: plr2wins, outcome: oppoOutcome })
+    .update({
+      winHold: false,
+      losses: plr2losses,
+      wins: plr2wins,
+      outcome: oppoOutcome
+    })
     .then(() => console.log("player 2 win/loss updated"))
     .catch(err => console.log(err));
-  db.ref().update({state: 4});
+  db.ref().update({ state: 4 });
   winDisplay();
   location.reload(); // needs better solution
 };
@@ -277,12 +286,12 @@ const winDisplay = () => {
   $(".rps-buttons").css({ display: "none" });
   let oppoId = "";
   persist === "player1" ? (oppoId = "player2") : (oppoId = "player1");
-  $("#header").text(`You ${rpsObj[persist].outcome}`)
+  $("#header").text(`You ${rpsObj[persist].outcome}`);
   $("#player").text(`${rpsObj[persist].userName} wins: ${rpsObj[persist].wins}
   losses: ${rpsObj[persist].losses}`);
   $("#opponent").text(`${rpsObj[oppoId].userName} wins: ${rpsObj[oppoId].wins}
   losses: ${rpsObj[oppoId].losses}`);
- 
+
   buttonHide();
   // db.ref().update({state: 4})
 };
@@ -300,20 +309,18 @@ db.ref().on("child_changed", snapshot => {
     //   playerDisplay(2);
     //   break;
     case 5:
+      console.log("child changed case 5");
       winDisplay();
       break;
     // case 5:
-      // playerDisplay(2);
+    // playerDisplay(2);
   }
 });
 
 // RESET BUTTON
 $(document).on("click", "#reset", function() {
   console.log("play again");
-  rpsObj.state === 5
-    ? db.ref().update({ state: 6 })
-    : db.ref().update({ state: 5 });
-  // db.ref().update({ state: 5 });
+  db.ref().update({ state: 2 });
   playerDisplay(2);
 });
 
