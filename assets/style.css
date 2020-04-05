@@ -1,14 +1,14 @@
 .parent {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr 0.75fr repeat(2, 0.5fr) 1fr 2fr;
+  grid-template-rows: 1fr 0.75fr repeat(3, 0.5fr) 2fr;
   grid-column-gap: 4px;
   grid-row-gap: 4px;
   height: 100vh;
   grid-template-areas:
     "header header header"
-    "player-1 player-1 opponent"
-    "comment-in comment-in comment-in"
+    "player vs opponent"
+    "comment-in comment-in submit"
     ". . submit-button"
     "rock paper scissors"
     "comment-out comment-out comment-out";
@@ -30,12 +30,12 @@
 #opponent, #no-button {
   grid-area: opponent;
 }
-#add-username {
+#text-input {
   grid-area: comment-in;
   /* display: none; */
 }
 #username-button {
-  grid-area: submit-button;
+  grid-area: submit;
 }
 #comment {
   grid-area: rock;
