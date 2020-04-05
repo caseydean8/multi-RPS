@@ -25,7 +25,7 @@ let persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
   console.log("page refresh");
   $(".parent, #header").attr({ "data-player": persist });
-  commentDisplay();
+  // commentDisplay();
   db.ref().on("value", snapshot => {
     let start = snapshot.val().state;
     switch (start) {
@@ -34,12 +34,15 @@ const pageRefresh = () => {
         break;
       case 2:
         playerDisplay(start);
+        commentDisplay();
         break;
       case 3:
         playerDisplay(2);
+        commentDisplay();
         break;
       case 4:
         winDisplay();
+        commentDisplay();
         break;
       default:
         defaultState;
@@ -62,7 +65,7 @@ const defaultState = () => {
     .text("submit user name");
 };
 
-// >>>>>>>>>>>>>> Start Button Step 1>>>>>>>>>>>>>>>>
+// >>>>>>>>>>>>>> No Thanks Button Step 1>>>>>>>>>>>>>>>>
 $("#no-button").on("click", function(event) {
   event.preventDefault();
   rpsObj.state === 0 ? playerCreate("player 1") : playerCreate("player 2");
@@ -123,11 +126,12 @@ const playerDisplay = state => {
   persist = sessionStorage.getItem(player);
   const thisUser = rpsObj[persist];
   console.log("playerDisplay", persist, thisUser);
-  if (thisUser.userName) {
+  if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
+    $("#add-username").css({ display: "none" });
     if (state > 1) {
       $("#opponent").text(`vs ${thisUser.opponent}`);
-      $(".rps-buttons").css({ display: "block" });
+      $(".rps-buttons, #add-username").css({ display: "block" });
       $("#header").text("choose carefully");
     } else {
       $("#opponent").text(`awaiting 2nd player`);
@@ -195,15 +199,15 @@ const commentSave = () => {
     .trim();
   db.ref("comment")
     .push({ comment: `${commenter}: ${comment}` })
-    .then(function() {
-      location.reload();
-      // $()
-    });
+    .then(() => location.reload())
+    .catch(err => console.log(err));
+  // db.ref().update({state: 2.5});
 };
 
 // Comment display
 
 const commentDisplay = () => {
+  $("#comment-out").empty();
   const query = firebase
     .database()
     .ref("comment")
@@ -222,18 +226,11 @@ const commentDisplay = () => {
   });
 };
 
-// // Comment child added for comment display on both pages
-// db.ref("comment")
-//   .once("child_added")
-//   .then(snapshot => {
-//     console.log(snapshot.val());
-//   });
-
 // ############# CLEAR DATABASE #############
 
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
-  // sessionStorage.clear();
+  sessionStorage.clear();
   const dbDefault = {
     userName: 0,
     opponent: "",
@@ -269,7 +266,8 @@ $(document).on("click", "#clear", function(event) {
     .catch(function(error) {
       console.log("Remove failed: " + error.message);
     });
-
+  // pageRefresh();
+  // defaultState();
   location.reload();
 });
 
