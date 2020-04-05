@@ -37,7 +37,7 @@
 #username-button {
   grid-area: submit-button;
 }
-#rock {
+#comment {
   grid-area: rock;
 }
 #reset {

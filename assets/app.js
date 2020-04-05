@@ -25,6 +25,9 @@ let persist = sessionStorage.getItem(player);
 const pageRefresh = () => {
   console.log("page refresh");
   $(".parent, #header").attr({ "data-player": persist });
+  // commentDisplay("player1");
+  // commentDisplay("player2");
+  commentDisplay();
   db.ref().on("value", snapshot => {
     let start = snapshot.val().state;
     switch (start) {
@@ -33,6 +36,9 @@ const pageRefresh = () => {
         break;
       case 2:
         playerDisplay(start);
+        break;
+        case 3: 
+        playerDisplay(2);
         break;
       case 4:
         winDisplay();
@@ -46,9 +52,8 @@ const pageRefresh = () => {
 window.onload = pageRefresh;
 
 const defaultState = () => {
-  // location.reload();
-
   console.log("defaultState triggered, rps object", rpsObj, persist);
+  $("#header").text("rock paper scissors");
   $("#player").text("Welcome! Add user name?");
   $("#no-button")
     .css({ display: "block" })
@@ -115,6 +120,7 @@ const checkSubmit = e => {
       .val()
       .trim();
     playerCreate(inputName);
+
   }
 };
 
@@ -141,8 +147,8 @@ const playerDisplay = state => {
 };
 
 const buttonHide = () => {
-  $("#no-button, #username-button").css({ display: "none" });
-
+  $("#no-button").css({ display: "none" });
+  $("#username-button").text("submit comment");
   $("#add-username")
     .val("")
     .attr({ placeholder: "add comment" });
@@ -168,7 +174,7 @@ const guessSubmit = (id, guess, display) => {
   console.log("=== guess submit ===");
   // $("#header").text(`You chose ${display}`);
   db.ref(persist)
-    .update({ guess: guess, hasGuessed: true })
+    .update({ guess: guess })
     .then(() => {
       console.log("guess updated at", persist);
     })
@@ -183,6 +189,48 @@ const guessSubmit = (id, guess, display) => {
       .then(rpsLogic());
   }
 };
+
+// Comment Button
+$(document).on("click", "#comment", function(event) {
+  event.preventDefault();
+  if (rpsObj.state >= 2) {
+    const commenter = rpsObj[persist].userName;
+    const comment = $("#add-username")
+      .val()
+      .trim();
+    db.ref("comment")
+      .push({ comment: `${commenter}: ${comment}` })
+      .then(function() {
+        location.reload();
+        // pageRefresh();
+      });
+      location.reload();
+  }
+  
+});
+
+// Comment display
+const commentDisplay = () => {
+
+  var query = firebase
+    .database()
+    .ref("comment")
+    .orderByKey();
+  query.once("value").then(function(snapshot) {
+    snapshot.forEach(function(childSnapshot) {
+      // key will be "ada" the first time and "alan" the second time
+      var key = childSnapshot.key;
+      console.log(key);
+      // childData will be the actual contents of the child
+  
+      var childData = childSnapshot.val().comment;
+      console.log(childData);
+      const commentTag = $("<p>");
+      $(commentTag).text(`${childData}`);
+      $("#comment-out").append(commentTag);
+    });
+  });
+}
 
 // ############# CLEAR DATABASE #############
 
@@ -217,7 +265,7 @@ $(document).on("click", "#clear", function(event) {
     });
 
   db.ref()
-    .update({ state: 0 })
+    .update({ state: 0, comment: "" })
     .then(function() {
       location.reload();
     })
