@@ -38,11 +38,11 @@ const pageRefresh = () => {
         commentDisplay();
         break;
       case 3:
-        playerDisplay(start);
+        playerDisplay(start); // 125
         commentDisplay();
         break;
       case 4:
-        winDisplay();
+        winDisplay(); // 342
         commentDisplay();
         break;
       default:
@@ -125,12 +125,14 @@ const checkSubmit = e => {
 const playerDisplay = state => {
   persist = sessionStorage.getItem(player);
   const thisUser = rpsObj[persist];
-  console.log("playerDisplay", persist, thisUser);
+  // console.log("playerDisplay", persist, thisUser);
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
+    $("#reset").css({display: "none"});
     if (state === 2) {
       $("#text-input").css({ display: "none" });
-      $("#opponent").text(`vs ${thisUser.opponent}`);
+      $("#vs").text("vs");
+      $("#opponent").text(thisUser.opponent);
       $("#header").text("choose carefully");
       $(".rps-buttons, #text-input, #username-button").css({ display: "block" });
     } else if (state === 1) {
@@ -140,7 +142,7 @@ const playerDisplay = state => {
       rpsObj[persist].hasGuessed
         ? $(".rps-buttons").css({ display: "none" })
         : $(".rps-buttons").css({ display: "block" });
-      $("#opponent").text(`vs ${thisUser.opponent}`);
+      $("#opponent").text(thisUser.opponent);
       $("#header").text("choose carefully");
     }
     buttonHide();
@@ -162,16 +164,16 @@ const commentSave = () => {
   const comment = $("#text-input")
     .val()
     .trim();
-
   db.ref("comment")
-    .push({ comment: `${commenter}: ${comment}` })
+    .push({ comment: `${commenter}: ${comment}`, commenter: persist })
     .then(() => location.reload())
     .catch(err => console.log(err));
 };
 
 // Comment display TODO make other players comment appear on left
 const commentDisplay = () => {
-  $("#comment-out").empty();
+  // $("#comment-out").empty();
+  $("#comment-out").text("");
   const query = db.ref("comment").orderByKey();
 
   query.once("value").then(snapshot => {
@@ -179,8 +181,11 @@ const commentDisplay = () => {
       // key is the comment identifier
       // const key = childSnapshot.key;
       // childData will be the actual contents of the child
+      console.log(childSnapshot.val().commenter);
       const commentTag = $("<p>");
       const childData = childSnapshot.val().comment;
+      const textAlign = childSnapshot.val().commenter;
+      if (textAlign === persist) $(commentTag).css({"text-align": "right"});
       $(commentTag).text(`${childData}`);
       $("#comment-out").append(commentTag);
     });
@@ -350,7 +355,7 @@ const winDisplay = () => {
   $("#opponent")
     .html(`${rpsObj[oppoId].userName}<br>wins: ${rpsObj[oppoId].wins}
 <br>losses: ${rpsObj[oppoId].losses}`);
-
+  $("#reset").css({display: "block"});
   buttonHide();
   // db.ref().update({state: 4})
 };

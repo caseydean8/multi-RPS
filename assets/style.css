@@ -1,15 +1,14 @@
 .parent {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  grid-template-rows: 1fr 0.75fr repeat(3, 0.5fr) 2fr;
+  grid-template-rows: 1fr 0.75fr repeat(2, 0.5fr) 2fr;
   grid-column-gap: 4px;
   grid-row-gap: 4px;
   height: 100vh;
   grid-template-areas:
-    "header header header"
+    "header header clear"
     "player vs opponent"
     "comment-in comment-in submit"
-    ". . submit-button"
     "rock paper scissors"
     "comment-out comment-out comment-out";
 }
@@ -42,9 +41,11 @@
 }
 #reset {
   grid-area: paper;
+  display: none;
 }
 #clear {
-  grid-area: scissors;
+  grid-area: clear;
+  /* display: none; */
 }
 #comment-out {
   grid-area: comment-out;
@@ -57,16 +58,16 @@
 
 #rock,
 #win-loss-1 {
-  grid-area: 4 / 1 / 5 / 2;
+  grid-area: rock; /* 4 / 1 / 5 / 2; */
   display: none;
 }
 #paper {
-  grid-area: 4 / 2 / 5 / 3;
+  grid-area: paper; /*4 / 2 / 5 / 3; */
   display: none;
 }
 #scissors,
 #win-loss-2 {
-  grid-area: 4 / 3 / 5 / 4;
+  grid-area: scissors; /* 4  / 3 / 5 / 4; */
   display: none;
 }
 
