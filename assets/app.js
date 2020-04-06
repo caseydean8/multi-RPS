@@ -12,19 +12,20 @@ var firebaseConfig = {
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 // firebase.analytics();
-
 // Enable logging
 // firebase.database.enableLogging(true);
 
 const db = firebase.database();
 
 let rpsObj = {};
-
 let persist = sessionStorage.getItem(player);
 
 const pageRefresh = () => {
   console.log("page refresh");
-  $(".parent").attr({ "data-player": persist }); // remove for production
+  $(".parent").attr({ "data-player": persist });
+  clearInterval(clear);
+  clearInterval(clearConsole);
+  autoClear();
   console.log("player for this page", persist);
   db.ref().on("value", snapshot => {
     let start = snapshot.val().state;
@@ -131,12 +132,14 @@ const playerDisplay = state => {
       $("#text-input").css({ display: "none" });
       $("#opponent").text(`vs ${thisUser.opponent}`);
       $("#header").text("choose carefully");
-      $(".rps-buttons, #text-input, username-button").css({ display: "block" });
+      $(".rps-buttons, #text-input, #username-button").css({ display: "block" });
     } else if (state === 1) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
     } else if (state === 3) {
-      (rpsObj[persist].hasGuessed)? $(".rps-buttons").css({ display: "none" }): $(".rps-buttons").css({ display: "block" })
+      rpsObj[persist].hasGuessed
+        ? $(".rps-buttons").css({ display: "none" })
+        : $(".rps-buttons").css({ display: "block" });
       $("#opponent").text(`vs ${thisUser.opponent}`);
       $("#header").text("choose carefully");
     }
@@ -194,6 +197,7 @@ $(document).on("click", "#clear", function(event) {
 });
 
 const clearDatabase = () => {
+  console.log("clear database happened");
   sessionStorage.clear();
   const dbDefault = {
     userName: 0,
@@ -232,6 +236,18 @@ const clearDatabase = () => {
     });
   location.reload();
 };
+
+let clear;
+let clearConsole
+
+const autoClear = () => {
+  clear = setTimeout(clearDatabase, 300000);// possibly change to 180000 (3 minutes)
+  clearConsole = setTimeout(logClear, 300000);
+}
+
+const logClear = () => console.log("autoClear occured");
+
+// autoClear();
 
 // Rock Paper Scissors Button
 $(document).on("click", ".rps-buttons", function(event) {
@@ -426,3 +442,24 @@ $(document).on("click", "#reset", function() {
 //   $(".rps-buttons").attr({ "data-player": id });
 //   $(".win-loss-column").attr({ "data-win": id });
 // };
+
+// var n = 100;
+// setTimeout(countDown,1000);
+
+// function countDown(){
+//    n--;
+//    if(n > 0){
+//       setTimeout(countDown, 1000);
+//    }
+//    console.log(n);
+// }
+
+// db.ref()
+//   .onDisconnect()
+//   .update({state: 0})
+//   .then(() => {
+//     clearDatabase();
+//     console
+//       .log("disconnected, database cleared")
+//       .catch(err => console.log(err));
+//   });
