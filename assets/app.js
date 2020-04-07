@@ -178,12 +178,11 @@ const buttonHide = () => {
 };
 
 const commentSave = () => {
-  const commenter = rpsObj[persist].userName;
   const comment = $("#text-input")
     .val()
     .trim();
   db.ref("comment")
-    .push({ comment: `${commenter}: ${comment}`, commenter: persist })
+    .push({ comment: `${comment}`, commenter: persist })
     .then(() => location.reload())
     .catch(err => console.log(err));
 };

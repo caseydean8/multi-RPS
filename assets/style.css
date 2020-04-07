@@ -4,8 +4,10 @@
   grid-template-rows: 1fr 0.75fr repeat(2, 0.5fr) 5fr;
   grid-column-gap: 4px;
   grid-row-gap: 4px;
-  /* height: 100vh; */
+  /* height: 100v; */
+  /* height: 667px; */
   min-height: 667px;
+  overflow-y: auto;
   grid-template-areas:
     "header header clear"
     "player vs opponent"
@@ -32,8 +34,17 @@
 }
 #text-input {
   grid-area: comment-in;
+  border: solid 1px #bbb;
+  border-radius: 4px;
+  padding: 10px;
+  /* height: 16px; */
   /* display: none; */
 }
+
+button {
+  /* height: 38px; */
+}
+
 #username-button {
   grid-area: submit;
 }
@@ -51,7 +62,9 @@
 #comment-out {
   grid-area: comment-out;
   display: grid;
-  grid-template-rows: repeat(8, .5fr);
+  grid-template-rows: repeat(12, .5fr);
+  height: 420px;
+  /* overflow: auto; */
 }
 
 #oppo-comment {
@@ -90,16 +103,11 @@ button,
   /* display: none */
 }
 
-input {
-  border: solid 1px #bbb;
-  border-radius: 4px;
-}
-
 .comment {
   border: solid 1px black;
   border-radius: 4px;
-  padding: 10px;
-  margin-top: 10px;
+  padding: 6px;
+  margin-top: 6px;
   width: fit-content;
   height: fit-content;
 }
@@ -112,3 +120,17 @@ input {
 .oppo-comment {
   margin-right: 33%;
 }
+
+/* .button:hover,
+button:hover,
+input[type="submit"]:hover,
+input[type="reset"]:hover,
+input[type="button"]:hover,
+.button:focus,
+button:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus,
+input[type="button"]:focus {
+  color: #333;
+  border-color: #888;
+  outline: 0; } */
