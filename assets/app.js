@@ -19,13 +19,16 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
+let clear;
+let clearConsole;
 
 const pageRefresh = () => {
   console.log("page refresh");
   $(".parent").attr({ "data-player": persist });
   clearInterval(clear);
   clearInterval(clearConsole);
-  autoClear();
+  console.log("clear", clear, "clearConsole", clearConsole);
+  // autoClear();
   console.log("player for this page", persist);
   db.ref().on("value", snapshot => {
     let start = snapshot.val().state;
@@ -54,7 +57,7 @@ const pageRefresh = () => {
 window.onload = pageRefresh;
 
 const defaultState = () => {
-  console.log("defaultState triggered, rps object", rpsObj, persist);
+  // console.log("defaultState triggered, rps object", rpsObj, persist);
   $("#header").text("rock paper scissors");
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
@@ -67,30 +70,48 @@ const defaultState = () => {
 };
 
 // >>>>>>>>>>>>>> No Thanks Button Step 1>>>>>>>>>>>>>>>>
-$("#no-button").on("click", function(event) {
-  event.preventDefault();
-  rpsObj.state === 0 ? playerCreate("player 1") : playerCreate("player 2");
-});
+// $("#no-button").on("click", function(event) {
+//   event.preventDefault();
+//   rpsObj.state === 0 ? playerCreate("player 1") : playerCreate("player 2");
+// });
 
+// Set rps.Object
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
 });
+// Enter user name or comment button
+$(document).on("click", "#username-button", function(event) {
+  event.preventDefault();
+  // rpsObj.state >= 2 ? commentSave() : playerCreate();
+  if (rpsObj.state === 0) {
+    sessionStorage.setItem(player, "player1");
+    playerCreate();
+    console.log("session player", persist);
+  } else if (rpsObj.state === 1) {
+    sessionStorage.setItem(player, "player2");
+    playerCreate();
+    console.log("session player", persist);
+  } else if (rpsObj.state > 1) commentSave();
+});
 
 // Send Player object to database Step 1.1
-const playerCreate = username => {
+const playerCreate = () => {
   // let username = "";
   const userAddedName = $("#text-input")
     .val()
     .trim();
-  userAddedName
-    ? (username = userAddedName)
-    : $("#text-input").attr({
-        placeholder: "PLEASE ENTER A USERNAME OR YOU ARE IN TROUBLE MISTER"
-      });
-  sessionStorage.clear();
-  if (rpsObj.state === 0) {
-    sessionStorage.setItem(player, "player1");
 
+  let state = rpsObj.state;
+  let username;
+  if (!userAddedName && state === 0) {
+    username = "player 1";
+  } else if (!userAddedName && state === 1) {
+    username = "player 2";
+  } else {
+    username = userAddedName;
+  }
+
+  if (rpsObj.state === 0) {
     db.ref("player1")
       .update({ userName: username })
       .then(() => playerDisplay(1));
@@ -110,12 +131,6 @@ const playerCreate = username => {
   // $(".parent, #header").attr({ "data-player": persist });
 };
 
-// Enter user name or comment button
-$(document).on("click", "#username-button", function(event) {
-  event.preventDefault();
-  rpsObj.state >= 2 ? commentSave() : playerCreate();
-});
-
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
     rpsObj.state < 2 ? playerCreate() : commentSave();
@@ -128,13 +143,15 @@ const playerDisplay = state => {
   // console.log("playerDisplay", persist, thisUser);
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
-    $("#reset").css({display: "none"});
+    $("#reset").css({ display: "none" });
     if (state === 2) {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
       $("#header").text("choose carefully");
-      $(".rps-buttons, #text-input, #username-button").css({ display: "block" });
+      $(".rps-buttons, #text-input, #username-button").css({
+        display: "block"
+      });
     } else if (state === 1) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
@@ -145,6 +162,7 @@ const playerDisplay = state => {
       $("#opponent").text(thisUser.opponent);
       $("#header").text("choose carefully");
     }
+    $("#comment-out").empty();
     buttonHide();
   } else {
     defaultState();
@@ -182,25 +200,24 @@ const commentDisplay = () => {
       // const key = childSnapshot.key;
       // childData will be the actual contents of the child
       console.log(childSnapshot.val().commenter);
-      const commentTag = $("<p>");
+      const commentTag = $("<div>").addClass("comment");
       const childData = childSnapshot.val().comment;
       const textAlign = childSnapshot.val().commenter;
-      if (textAlign === persist) $(commentTag).css({"text-align": "right"});
+      (textAlign === persist) ? $(commentTag).addClass("my-comment") : $(commentTag).addClass("oppo-comment");
       $(commentTag).text(`${childData}`);
       $("#comment-out").append(commentTag);
     });
   });
 };
 
-// ############# CLEAR DATABASE #############
-
+// Clear database button
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
   clearDatabase();
   pageRefresh();
-  // location.reload();
 });
 
+// CLEAR DATABASE
 const clearDatabase = () => {
   console.log("clear database happened");
   sessionStorage.clear();
@@ -242,17 +259,13 @@ const clearDatabase = () => {
   location.reload();
 };
 
-let clear;
-let clearConsole
-
 const autoClear = () => {
-  clear = setTimeout(clearDatabase, 300000);// possibly change to 180000 (3 minutes)
   clearConsole = setTimeout(logClear, 300000);
-}
+  clear = setTimeout(clearDatabase, 300000); // possibly change to 180000 (3 minutes)
+  console.log(clear, clearConsole, "at autoClear")
+};
 
 const logClear = () => console.log("autoClear occured");
-
-// autoClear();
 
 // Rock Paper Scissors Button
 $(document).on("click", ".rps-buttons", function(event) {
@@ -349,13 +362,13 @@ const winDisplay = () => {
   let oppoId = "";
   persist === "player1" ? (oppoId = "player2") : (oppoId = "player1");
   $("#header").text(`You ${rpsObj[persist].outcome}`);
-  $("#player")
-    .html(`${rpsObj[persist].userName}<br>wins: ${rpsObj[persist].wins}
-<br>losses: ${rpsObj[persist].losses}`);
-  $("#opponent")
-    .html(`${rpsObj[oppoId].userName}<br>wins: ${rpsObj[oppoId].wins}
-<br>losses: ${rpsObj[oppoId].losses}`);
-  $("#reset").css({display: "block"});
+  $("#player").html(
+    `${rpsObj[persist].userName}<br>W ${rpsObj[persist].wins} L ${rpsObj[persist].losses}`
+  );
+  $("#opponent").html(
+    `${rpsObj[oppoId].userName}<br>W ${rpsObj[oppoId].wins} L ${rpsObj[oppoId].losses}`
+  );
+  $("#reset").css({ display: "block" });
   buttonHide();
   // db.ref().update({state: 4})
 };
@@ -363,6 +376,7 @@ const winDisplay = () => {
 // RESET BUTTON
 $(document).on("click", "#reset", function() {
   db.ref().update({ state: 2 });
+
   const reset = db.ref().orderByKey();
 
   reset.once("value").then(snapshot => {
@@ -375,31 +389,17 @@ $(document).on("click", "#reset", function() {
       if (guessdata.hasGuessed) db.ref(key).update({ hasGuessed: false });
     });
   });
+  $("#comment-out").empty(); // attempt to keep comments from doubling up, same line not working in commentDisplay
+});
+
+// ************* CHILD CHANGED *************
+db.ref().on("child_changed", snapshot => {
+  let otherPage = snapshot.val();
+  //reloads other page when state is 0
+  if (otherPage === 0) pageRefresh();
 });
 
 // XXXXXXXXXX NOT USED XXXXXXXXXXXXXXXXXXXXXX
-
-// ************* CHILD CHANGED *************
-// db.ref("comment").on("child_changed", snapshot => {
-//   let otherPage = snapshot.val();
-//   console.log("---child changed---", otherPage);
-//   // pageRefresh; this fucking caused a lot of problems i think
-//   location.reload();
-//   switch (otherPage) {
-//     // case 1:
-//     //   playerDisplay(1);
-//     //   break;
-//     case 2:
-//       playerDisplay(2);
-//       break;
-//     case 5:
-//       console.log("child changed case 5");
-//       winDisplay();
-//       break;
-//     // case 5:
-//     // playerDisplay(2);
-//   }
-// });
 // const guessesIn = () => {
 //   const p1 = rpsObj[playerArr[1]];
 //   const p2 = rpsObj[playerArr[0]];
