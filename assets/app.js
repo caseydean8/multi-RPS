@@ -24,6 +24,7 @@ let clearConsole;
 
 const pageRefresh = () => {
   $(".parent").attr({ "data-player": persist });
+  $("#comment-out").empty();
   // clearInterval(clear);
   // clearInterval(clearConsole);
   // console.log("clear", clear, "clearConsole", clearConsole);
@@ -159,7 +160,8 @@ const playerDisplay = state => {
         $("#header").text("Rock, Paper, or Scissors?");
       }
     }
-    $("#comment-out").empty();
+    // $("#comment-out").empty();
+    // commentDisplay();// trying to remove multiple comments
     buttonHide();
   } else {
     defaultState();
@@ -186,33 +188,38 @@ const commentSave = () => {
 
 // Comment display TODO make other players comment appear on left
 const commentDisplay = () => {
+  console.log("@commentDisplay, state =", rpsObj.state, "persist =", persist);
   // $("#comment-out").empty();
-  $("#comment-out").text("");
+  // $("#comment-out").text("");
   const query = db.ref("comment").orderByKey();
 
-  query.once("value").then(snapshot => {
-    snapshot.forEach(childSnapshot => {
-      // key is the comment identifier
-      // const key = childSnapshot.key;
-      // childData will be the actual contents of the child
-      // console.log(childSnapshot.val().commenter);
-      const commentTag = $("<div>").addClass("comment");
-      const childData = childSnapshot.val().comment;
-      const textAlign = childSnapshot.val().commenter;
-      textAlign === persist
-        ? $(commentTag).addClass("my-comment")
-        : $(commentTag).addClass("oppo-comment");
-      $(commentTag).text(`${childData}`);
-      $("#comment-out").append(commentTag);
-    });
-  });
+  query
+    .once("value")
+    .then(snapshot => {
+      $("#comment-out").empty();
+      snapshot.forEach(childSnapshot => {
+        // key is the comment identifier
+        // const key = childSnapshot.key;
+        // childData will be the actual contents of the child
+        // console.log(childSnapshot.val().commenter);
+        const commentTag = $("<div>").addClass("comment");
+        const childData = childSnapshot.val().comment;
+        const textAlign = childSnapshot.val().commenter;
+        textAlign === persist
+          ? $(commentTag).addClass("my-comment")
+          : $(commentTag).addClass("oppo-comment");
+        $(commentTag).text(`${childData}`);
+        $("#comment-out").append(commentTag);
+      });
+    })
+    .catch(err => console.log(err));
 };
 
 // Clear database button
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
   clearDatabase();
-  pageRefresh();
+  pageRefresh(); // probably redundant
 });
 
 // CLEAR DATABASE
@@ -256,6 +263,7 @@ const clearDatabase = () => {
       console.log("Remove failed: " + error.message);
     });
   location.reload();
+  console.log("cleared database");
 };
 
 const autoClear = () => {
@@ -284,7 +292,8 @@ const guessSubmit = (guessNumber, guessName) => {
   db.ref(persist)
     .update({ guess: guessNumber, guessName: guessName })
     .then(() => {
-      console.log("guess updated at", persist);
+      console.log("guess updated for", persist, "at guessSubmit");
+      pageRefresh();
     })
     .catch(err => console.log(err));
 
@@ -301,7 +310,7 @@ const guessSubmit = (guessNumber, guessName) => {
 
 // Main Game Logic
 const rpsLogic = () => {
-  // console.log("inside game logic ", rpsObj);
+  console.log("inside rpsLogic");
   const guess1 = rpsObj.player1.guess;
   const guess2 = rpsObj.player2.guess;
   // console.log(guess1, guess2);
@@ -311,7 +320,6 @@ const rpsLogic = () => {
   let plr2losses = rpsObj.player2.losses;
   // const header1 = $(".parent").data("player");
   const header1 = persist;
-  console.log(header1);
   let header2 = "";
   header1 === "player1" ? (header2 = "player2") : (header2 = "player1");
   let outcome;
@@ -351,7 +359,7 @@ const rpsLogic = () => {
     .catch(err => console.log(err));
   db.ref().update({ state: 4 });
   winDisplay();
-  // location.reload(); // needs better solution
+  pageRefresh();
 };
 
 // Win Loss Comment Display
@@ -373,6 +381,7 @@ const winDisplay = () => {
 
 // RESET BUTTON
 $(document).on("click", "#reset", function() {
+  $("#comment-out").empty();
   db.ref().update({ state: 2 });
 
   const reset = db.ref().orderByKey();
@@ -387,19 +396,15 @@ $(document).on("click", "#reset", function() {
       if (guessdata.guessName) db.ref(key).update({ guessName: null });
     });
   });
-  $("#comment-out").empty(); // attempt to keep comments from doubling up, same line not working in commentDisplay
+  //$("#comment-out").empty(); // attempt to keep comments from doubling up, same line not working in commentDisplay
 });
 
-// ************* CHILD CHANGED *************
-// is this working?
-// db.ref().on("child_changed", snapshot => {
-//   let otherPage = snapshot.val();
-//   //reloads other page when state is 0
-//   // if (otherPage === 0) pageRefresh();
-//   pageRefresh();
-// });
-
-db.ref().on("child_changed", () => {
-  console.log("child changed");
+db.ref().on("child_changed", snapshot => {
+  const change = snapshot.val();
+  console.log("child CHANGED key", snapshot.key);
+  // snapshot.forEach(childChanged => {
+  //   console.log(childChanged.val());
+  // });
+  // setTimeout(pageRefresh(), 100);
   pageRefresh();
 });
