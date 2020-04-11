@@ -23,15 +23,14 @@ let clear;
 let clearConsole;
 
 const pageRefresh = () => {
-  console.log("page refresh");
   $(".parent").attr({ "data-player": persist });
-  clearInterval(clear);
-  clearInterval(clearConsole);
-  console.log("clear", clear, "clearConsole", clearConsole);
+  // clearInterval(clear);
+  // clearInterval(clearConsole);
+  // console.log("clear", clear, "clearConsole", clearConsole);
   // autoClear();
-  console.log("player for this page", persist);
-  db.ref().on("value", snapshot => {
+  db.ref().once("value", snapshot => {
     let start = snapshot.val().state;
+    console.log("page refresh, state =", start, "persist =", persist);
     switch (start) {
       case 1:
         playerDisplay(start);
@@ -69,16 +68,11 @@ const defaultState = () => {
     .text("submit user name");
 };
 
-// >>>>>>>>>>>>>> No Thanks Button Step 1>>>>>>>>>>>>>>>>
-// $("#no-button").on("click", function(event) {
-//   event.preventDefault();
-//   rpsObj.state === 0 ? playerCreate("player 1") : playerCreate("player 2");
-// });
-
 // Set rps.Object
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
 });
+
 // Enter user name or comment button
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
@@ -86,17 +80,16 @@ $(document).on("click", "#username-button", function(event) {
   if (rpsObj.state === 0) {
     sessionStorage.setItem(player, "player1");
     playerCreate();
-    console.log("session player", persist);
   } else if (rpsObj.state === 1) {
     sessionStorage.setItem(player, "player2");
     playerCreate();
-    console.log("session player", persist);
+    // console.log("session player", persist);
   } else if (rpsObj.state > 1) commentSave();
 });
 
 // Send Player object to database Step 1.1
 const playerCreate = () => {
-  // let username = "";
+  console.log("playerCreate, persist =", persist);
   const userAddedName = $("#text-input")
     .val()
     .trim();
@@ -139,6 +132,7 @@ const checkSubmit = e => {
 
 const playerDisplay = state => {
   persist = sessionStorage.getItem(player);
+  console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
   const thisUser = rpsObj[persist];
   // console.log("playerDisplay", persist, thisUser);
   if (thisUser) {
@@ -148,7 +142,7 @@ const playerDisplay = state => {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
-      $("#header").text("choose carefully");
+      $("#header").text("Rock, Paper, or Scissors?");
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
@@ -156,11 +150,14 @@ const playerDisplay = state => {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
     } else if (state === 3) {
-      rpsObj[persist].hasGuessed
-        ? $(".rps-buttons").css({ display: "none" })
-        : $(".rps-buttons").css({ display: "block" });
       $("#opponent").text(thisUser.opponent);
-      $("#header").text("choose carefully");
+      if (thisUser.guessName) {
+        $(".rps-buttons").css({ display: "none" });
+        $("#header").text(`you chose ${thisUser.guessName}`);
+      } else {
+        $(".rps-buttons").css({ display: "block" });
+        $("#header").text("Rock, Paper, or Scissors?");
+      }
     }
     $("#comment-out").empty();
     buttonHide();
@@ -198,11 +195,13 @@ const commentDisplay = () => {
       // key is the comment identifier
       // const key = childSnapshot.key;
       // childData will be the actual contents of the child
-      console.log(childSnapshot.val().commenter);
+      // console.log(childSnapshot.val().commenter);
       const commentTag = $("<div>").addClass("comment");
       const childData = childSnapshot.val().comment;
       const textAlign = childSnapshot.val().commenter;
-      (textAlign === persist) ? $(commentTag).addClass("my-comment") : $(commentTag).addClass("oppo-comment");
+      textAlign === persist
+        ? $(commentTag).addClass("my-comment")
+        : $(commentTag).addClass("oppo-comment");
       $(commentTag).text(`${childData}`);
       $("#comment-out").append(commentTag);
     });
@@ -224,7 +223,8 @@ const clearDatabase = () => {
     userName: 0,
     opponent: "",
     guess: null,
-    hasGuessed: false,
+    guessName: null,
+    // hasGuessed: false,
     wins: 0,
     losses: 0
   };
@@ -261,7 +261,7 @@ const clearDatabase = () => {
 const autoClear = () => {
   clearConsole = setTimeout(logClear, 300000);
   clear = setTimeout(clearDatabase, 300000); // possibly change to 180000 (3 minutes)
-  console.log(clear, clearConsole, "at autoClear")
+  console.log(clear, clearConsole, "at autoClear");
 };
 
 const logClear = () => console.log("autoClear occured");
@@ -273,17 +273,16 @@ $(document).on("click", ".rps-buttons", function(event) {
   let dbGuess = 0;
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
-  const id = $(this)
-    .parent()
-    .data("player");
-  guessSubmit(dbGuess);
+  guessSubmit(dbGuess, guess);
   $("#header").text(`you chose ${guess}`);
   $(".rps-buttons").css({ display: "none" });
+  $("#comment-out").empty();
+  // location.reload(); // this resets header, don't want that
 });
 
-const guessSubmit = guess => {
+const guessSubmit = (guessNumber, guessName) => {
   db.ref(persist)
-    .update({ guess: guess, hasGuessed: true })
+    .update({ guess: guessNumber, guessName: guessName })
     .then(() => {
       console.log("guess updated at", persist);
     })
@@ -352,7 +351,7 @@ const rpsLogic = () => {
     .catch(err => console.log(err));
   db.ref().update({ state: 4 });
   winDisplay();
-  location.reload(); // needs better solution
+  // location.reload(); // needs better solution
 };
 
 // Win Loss Comment Display
@@ -384,86 +383,23 @@ $(document).on("click", "#reset", function() {
       const key = childSnapshot.key;
       // childData will be the actual contents of the child
       const guessdata = childSnapshot.val();
-      console.log(guessdata);
-      if (guessdata.hasGuessed) db.ref(key).update({ hasGuessed: false });
+      // console.log(guessdata);
+      if (guessdata.guessName) db.ref(key).update({ guessName: null });
     });
   });
   $("#comment-out").empty(); // attempt to keep comments from doubling up, same line not working in commentDisplay
 });
 
 // ************* CHILD CHANGED *************
-db.ref().on("child_changed", snapshot => {
-  let otherPage = snapshot.val();
-  //reloads other page when state is 0
-  if (otherPage === 0) pageRefresh();
+// is this working?
+// db.ref().on("child_changed", snapshot => {
+//   let otherPage = snapshot.val();
+//   //reloads other page when state is 0
+//   // if (otherPage === 0) pageRefresh();
+//   pageRefresh();
+// });
+
+db.ref().on("child_changed", () => {
+  console.log("child changed");
+  pageRefresh();
 });
-
-// XXXXXXXXXX NOT USED XXXXXXXXXXXXXXXXXXXXXX
-// const guessesIn = () => {
-//   const p1 = rpsObj[playerArr[1]];
-//   const p2 = rpsObj[playerArr[0]];
-//   if (playerArr.length === 2) {
-//     if (p1.hasGuessed && p2.hasGuessed) {
-//       rpsLogic(p1, p2);
-//     }
-//   }
-// };
-
-// 33333333333333 Step 3 Display 3333333333333
-// const userNameAdd = (player, dataId) => {
-//   $("#no-button").remove();
-//   if (playerArr.length < 2)
-//     $(`#opponent[data-play=${dataId}]`).text(`awaiting second player`);
-//   if (playerArr.length === 2) {
-//     playerArr.forEach(id => {
-//       if (id != dataId) {
-//         console.log(id);
-//         $(`#opponent[data-play=${dataId}]`).text(`vs ${rpsObj[id].userName}`);
-//       }
-//     });
-//   }
-//   playerDisplay(player, dataId);
-//   $(".rps-buttons").css({ display: "block" });
-// };
-
-// %%%%%%%%%%%%% SEND FIREBASE %%%%%%%%%%%%%
-// const sendFirebase = (userName, id) => {
-//   db.ref(id)
-//     .update({ userName: userName })
-//     .then(function() {
-//       console.log(`user name added`);
-//     })
-//     .catch(function(err) {
-//       console.log(err);
-//     });
-// };
-
-// Display after Start Button, UX Step 2
-// const pageDisplay = id => {
-//   $("#player-1, #opponent").attr({ "data-play": id });
-
-//   $("#text-input").attr({ "data-input": id });
-//   $(".rps-buttons").attr({ "data-player": id });
-//   $(".win-loss-column").attr({ "data-win": id });
-// };
-
-// var n = 100;
-// setTimeout(countDown,1000);
-
-// function countDown(){
-//    n--;
-//    if(n > 0){
-//       setTimeout(countDown, 1000);
-//    }
-//    console.log(n);
-// }
-
-// db.ref()
-//   .onDisconnect()
-//   .update({state: 0})
-//   .then(() => {
-//     clearDatabase();
-//     console
-//       .log("disconnected, database cleared")
-//       .catch(err => console.log(err));
-//   });
