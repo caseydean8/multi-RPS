@@ -21,13 +21,40 @@ let rpsObj = {};
 let persist = sessionStorage.getItem(player);
 let clear;
 let clearConsole;
+const dbDefault = {
+  dataPersist: false,
+  userName: 0,
+  opponent: "",
+  guess: null,
+  guessName: null,
+  // hasGuessed: false,
+  wins: 0,
+  losses: 0
+};
+
+db.ref()
+  .onDisconnect()
+  .update({ state: 0 });
+
+const assignStorage = () => {
+  if (!persist) {
+    db.ref("player")
+      .push(dbDefault)
+      .once("value")
+      .then(snapshot => {
+        console.log(snapshot.key);
+        persist = snapshot.key;
+      });
+  }
+};
 
 const pageRefresh = () => {
-  $(".parent").attr({ "data-player": persist });
+  // $(".parent").attr({ "data-player": persist });
   // clearInterval(clear);
   // clearInterval(clearConsole);
   // console.log("clear", clear, "clearConsole", clearConsole);
   // autoClear();
+  if (!persist) assignStorage();
   db.ref().once("value", snapshot => {
     let start = snapshot.val().state;
     console.log("page refresh, state =", start, "persist =", persist);
@@ -49,6 +76,7 @@ const pageRefresh = () => {
         break;
       default:
         defaultState();
+        assignStorage();
     }
   });
 };
@@ -56,7 +84,54 @@ const pageRefresh = () => {
 window.onload = pageRefresh;
 // setTimeout(pageRefresh, 10000);
 
+const pl1 = db.ref("player1");
+const pl2 = db.ref("player2");
+
+// const assignStorage = () => {
+//   console.log("@ assignStorage, persist =", persist);
+//   if (persist === null) {
+//     db.ref()
+//       .orderByKey()
+//       .once("value")
+//       .then(snapshot => {
+//         snapshot.forEach(childSnapshot => {
+//           const key = childSnapshot.key;
+//           const playData = childSnapshot.val();
+//           // console.log(playData);
+//           if (playData.dataPersist) {
+//             console.log("if statement false", key);
+//             sessionStorage.setItem(player, key);
+//             db.ref(key).update({ dataPersist: true });
+//           }
+//         });
+//       });
+//   }
+// };
+
 const defaultState = () => {
+  console.log(
+    "persist =",
+    persist,
+    "player1 dataPersist =",
+    rpsObj.player1.dataPersist,
+    "at defaultState"
+  );
+  // set session storage on page load
+  // if (persist === null) {
+  //   if (!rpsObj.player1.dataPersist) {
+  //     sessionStorage.setItem(player, "player1");
+  //     pl1.update({ dataPersist: true }).then(() => {
+  //       console.log(rpsObj.player1.dataPersist);
+  //       location.reload;
+  //     });
+  //   } else if (rpsObj.player1.dataPersist) {
+  //     sessionStorage.setItem(player, "player2"); // do I need to change datapersist to true at player2?
+  //     pl2.update({ dataPersist: true });
+  //   }
+  // }
+
+  console.log(persist, "after update at defaultState");
+
   $("#header").text("rock paper scissors");
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
@@ -80,10 +155,10 @@ db.ref().on("value", snapshot => {
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
   if (state === 0) {
-    sessionStorage.setItem(player, "player1");
+    // sessionStorage.setItem(player, "player1");
     playerCreate();
   } else if (state === 1) {
-    sessionStorage.setItem(player, "player2");
+    // sessionStorage.setItem(player, "player2");
     playerCreate();
   } else if (state > 1) commentSave();
 });
@@ -132,7 +207,7 @@ const checkSubmit = e => {
 };
 
 const playerDisplay = state => {
-  persist = sessionStorage.getItem(player);
+  // persist = sessionStorage.getItem(player);
   console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
   const thisUser = rpsObj[persist];
   // console.log("playerDisplay", persist, thisUser);
@@ -147,9 +222,11 @@ const playerDisplay = state => {
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
-    } else if (state === 1) {
+    } else if (state === 1 && rpsObj[persist].userName) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
+    } else if (state === 1 && !rpsObj[persist].opponent) {
+      defaultState();
     } else if (state === 3) {
       $("#opponent").text(thisUser.opponent);
       if (thisUser.guessName) {
@@ -198,7 +275,7 @@ const commentDisplay = () => {
   query
     .once("value")
     .then(snapshot => {
-      $("#comment-out").empty();
+      $("#comment-out").empty(); // must be on this line to work properly
       snapshot.forEach(childSnapshot => {
         // key is the comment identifier
         // const key = childSnapshot.key;
@@ -227,43 +304,35 @@ $(document).on("click", "#clear", function(event) {
 const clearDatabase = () => {
   console.log("clear database happened");
   sessionStorage.clear();
-  const dbDefault = {
-    userName: 0,
-    opponent: "",
-    guess: null,
-    guessName: null,
-    // hasGuessed: false,
-    wins: 0,
-    losses: 0
-  };
 
-  db.ref("player1")
-    .update(dbDefault)
-    .then(function() {
-      location.reload();
-    })
-    .catch(function(error) {
-      console.log("Remove failed: " + error.message);
-    });
+  // db.ref("player1")
+  //   .update(dbDefault)
+  //   .then(function() {
+  //     location.reload();
+  //   })
+  //   .catch(function(error) {
+  //     console.log("Remove failed: " + error.message);
+  //   });
 
-  db.ref("player2")
-    .update(dbDefault)
-    .then(function() {
-      location.reload();
-    })
-    .catch(function(error) {
-      console.log("Remove failed: " + error.message);
-    });
+  // db.ref("player2")
+  //   .update(dbDefault)
+  //   .then(function() {
+  //     location.reload();
+  //   })
+  //   .catch(function(error) {
+  //     console.log("Remove failed: " + error.message);
+  //   });
 
   db.ref()
-    .update({ state: 0, comment: "" })
+    .update({ state: 0, comment: "", player: "" })
     .then(function() {
       location.reload();
     })
     .catch(function(error) {
       console.log("Remove failed: " + error.message);
     });
-  location.reload();
+  pageRefresh();
+  // location.reload();// redundant?
   console.log("cleared database");
 };
 
