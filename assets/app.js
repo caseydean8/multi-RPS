@@ -24,7 +24,6 @@ let clearConsole;
 
 const pageRefresh = () => {
   $(".parent").attr({ "data-player": persist });
-  $("#comment-out").empty();
   // clearInterval(clear);
   // clearInterval(clearConsole);
   // console.log("clear", clear, "clearConsole", clearConsole);
@@ -55,9 +54,9 @@ const pageRefresh = () => {
 };
 
 window.onload = pageRefresh;
+// setTimeout(pageRefresh, 10000);
 
 const defaultState = () => {
-  // console.log("defaultState triggered, rps object", rpsObj, persist);
   $("#header").text("rock paper scissors");
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
@@ -70,22 +69,23 @@ const defaultState = () => {
 };
 
 // Set rps.Object
+let state;
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
+  state = rpsObj.state;
 });
+// let state = rpsObj.state;
 
 // Enter user name or comment button
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
-  // rpsObj.state >= 2 ? commentSave() : playerCreate();
-  if (rpsObj.state === 0) {
+  if (state === 0) {
     sessionStorage.setItem(player, "player1");
     playerCreate();
-  } else if (rpsObj.state === 1) {
+  } else if (state === 1) {
     sessionStorage.setItem(player, "player2");
     playerCreate();
-    // console.log("session player", persist);
-  } else if (rpsObj.state > 1) commentSave();
+  } else if (state > 1) commentSave();
 });
 
 // Send Player object to database Step 1.1
@@ -95,7 +95,7 @@ const playerCreate = () => {
     .val()
     .trim();
 
-  let state = rpsObj.state;
+  // let state = rpsObj.state;
   let username;
   if (!userAddedName && state === 0) {
     username = "player 1";
@@ -105,12 +105,12 @@ const playerCreate = () => {
     username = userAddedName;
   }
 
-  if (rpsObj.state === 0) {
+  if (state === 0) {
     db.ref("player1")
       .update({ userName: username })
       .then(() => playerDisplay(1));
     db.ref().update({ state: 1 });
-  } else if (rpsObj.state === 1) {
+  } else if (state === 1) {
     sessionStorage.setItem(player, "player2");
 
     db.ref("player1").update({ opponent: username });
@@ -180,17 +180,19 @@ const commentSave = () => {
   const comment = $("#text-input")
     .val()
     .trim();
-  db.ref("comment")
-    .push({ comment: `${comment}`, commenter: persist })
-    .then(() => location.reload())
-    .catch(err => console.log(err));
+  console.log(comment, "at commentSave");
+  comment
+    ? db
+        .ref("comment")
+        .push({ comment: `${comment}`, commenter: persist })
+        .then(() => location.reload())
+        .catch(err => console.log(err))
+    : $("#text-input").attr({ placeholder: "please type a comment you dope" });
 };
 
 // Comment display TODO make other players comment appear on left
 const commentDisplay = () => {
-  console.log("@commentDisplay, state =", rpsObj.state, "persist =", persist);
-  // $("#comment-out").empty();
-  // $("#comment-out").text("");
+  console.log("@commentDisplay, state =", state, "persist =", persist);
   const query = db.ref("comment").orderByKey();
 
   query
@@ -201,7 +203,6 @@ const commentDisplay = () => {
         // key is the comment identifier
         // const key = childSnapshot.key;
         // childData will be the actual contents of the child
-        // console.log(childSnapshot.val().commenter);
         const commentTag = $("<div>").addClass("comment");
         const childData = childSnapshot.val().comment;
         const textAlign = childSnapshot.val().commenter;
@@ -299,7 +300,6 @@ const guessSubmit = (guessNumber, guessName) => {
 
   if (rpsObj.state === 2) {
     db.ref().update({ state: 3 });
-    // if (rpsObj[persist].hasGuessed) $(".rps-buttons").css({ display: "none" });
   } else if (rpsObj.state === 3) {
     db.ref()
       .update({ state: 4 })
@@ -399,12 +399,13 @@ $(document).on("click", "#reset", function() {
   //$("#comment-out").empty(); // attempt to keep comments from doubling up, same line not working in commentDisplay
 });
 
-db.ref().on("child_changed", snapshot => {
-  const change = snapshot.val();
-  console.log("child CHANGED key", snapshot.key);
-  // snapshot.forEach(childChanged => {
-  //   console.log(childChanged.val());
-  // });
-  // setTimeout(pageRefresh(), 100);
-  pageRefresh();
-});
+db.ref().on("child_changed", () => pageRefresh());
+// db.ref().on("child_changed", snapshot => {
+//   const change = snapshot.val();
+//   console.log("child CHANGED key", snapshot.key);
+//   // snapshot.forEach(childChanged => {
+//   //   console.log(childChanged.val());
+//   // });
+//   // setTimeout(pageRefresh(), 100);
+//   pageRefresh();
+// });
