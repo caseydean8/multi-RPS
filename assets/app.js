@@ -19,6 +19,8 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
+let oppoPersist = sessionStorage.getItem(opponent);
+console.log("this player=", persist, "opponent=", oppoPersist);
 let clear;
 let clearConsole;
 const dbDefault = {
@@ -31,12 +33,6 @@ const dbDefault = {
   losses: 0,
   isPlayer1: false
 };
-
-// const keyArr = [];
-// console.log(keyArr);
-// db.ref(`player/${persist}`)
-//   .onDisconnect()
-//   .remove();
 
 const assignStorage = () => {
   if (!persist) {
@@ -54,8 +50,6 @@ const assignStorage = () => {
       });
   }
 };
-console.log("persist =", persist, "in main file");
-// assignStorage();
 
 const pageRefresh = () => {
   // $(".parent").attr({ "data-player": persist });
@@ -66,10 +60,10 @@ const pageRefresh = () => {
   // if (!persist) assignStorage();
   db.ref().once("value", snapshot => {
     let start = snapshot.val().state;
-    console.log("page refresh, state =", start, "persist =", persist);
+    // console.log("page refresh, state =", start, "persist =", persist);
     switch (start) {
       case 1:
-        // playerDisplay(start);
+        playerDisplay(start);
         break;
       case 2:
         playerDisplay(start);
@@ -114,30 +108,24 @@ let state;
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   state = rpsObj.state;
-  console.log(rpsObj);
+  console.log("rps object", rpsObj);
 });
-// let state = rpsObj.state;
 
 // Enter user name or comment button
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
   assignStorage();
-  // location.reload;
-  if (state <= 1) {
-    setTimeout(playerCreate, 100);
-    // } else if (state === 1) {
-    //   playerCreate();
-  } else if (state > 1) commentSave();
+  state <= 1 ? setTimeout(playerCreate, 100) : commentSave;
 });
 
 // Send Player object to database Step 1.1
+// const thisPlayer = `player/${persist}`;
+let oppoKey;
 const playerCreate = () => {
   console.log("playerCreate, persist =", persist);
   const userAddedName = $("#text-input")
     .val()
     .trim();
-
-  // let state = rpsObj.state;
   let username;
   if (!userAddedName && state === 0) {
     username = "player 1";
@@ -162,14 +150,15 @@ const playerCreate = () => {
       console.log("snapshot value of player =", snapshot.val());
       snapshot.forEach(snapChild => {
         let key = snapChild.key;
-        let val = snapChild.val();
-        console.log("in playerC", key, val);
-        let oppoKey;
+        // let val = snapChild.val();
+        // console.log("in playerC", key, val);
         if (key != persist) {
           oppoKey = key;
-          db.ref(`player/${oppoKey}`).update({ opponent: username });
+          otherUser = rpsObj.player[oppoKey]
+          db.ref(`player/${oppoKey}`).update({ opponent: username, oppoKey: persist });
           db.ref(`player/${persist}`).update({
-            opponent: rpsObj.player[oppoKey].userName
+            opponent: otherUser.userName,
+            oppoKey: oppoKey
           });
         }
       });
@@ -179,15 +168,14 @@ const playerCreate = () => {
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
     assignStorage();
-    rpsObj.state < 2 ? setTimeout(playerCreate, 100) : commentSave();
+    state < 2 ? setTimeout(playerCreate, 100) : commentSave();
   }
 };
 
+let thisUser;
 const playerDisplay = state => {
-  // persist = sessionStorage.getItem(player);
   console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
-  const thisUser = rpsObj.player[persist];
-  // console.log("playerDisplay", persist, thisUser);
+  thisUser = rpsObj.player[persist];
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
     $("#reset").css({ display: "none" });
@@ -199,7 +187,7 @@ const playerDisplay = state => {
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
-    } else if (state === 1 && rpsObj[persist].userName) {
+    } else if (state === 1 && rpsObj.player[persist].userName) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
     } else if (state === 1 && !rpsObj[persist].opponent) {
@@ -214,8 +202,6 @@ const playerDisplay = state => {
         $("#header").text("Rock, Paper, or Scissors?");
       }
     }
-    // $("#comment-out").empty();
-    // commentDisplay();// trying to remove multiple comments
     buttonHide();
   } else {
     defaultState();
@@ -291,7 +277,6 @@ const clearDatabase = () => {
       console.log("Remove failed: " + error.message);
     });
   pageRefresh();
-  // location.reload();// redundant?
   console.log("cleared database");
 };
 
@@ -314,11 +299,11 @@ $(document).on("click", ".rps-buttons", function(event) {
   $("#header").text(`you chose ${guess}`);
   $(".rps-buttons").css({ display: "none" });
   $("#comment-out").empty();
-  // location.reload(); // this resets header, don't want that
 });
 
 const guessSubmit = (guessNumber, guessName) => {
-  db.ref(persist)
+  console.log(thisUser, "at guess submit, other user=", otherUser);
+  db.ref(`player/${persist}`)
     .update({ guess: guessNumber, guessName: guessName })
     .then(() => {
       console.log("guess updated for", persist, "at guessSubmit");
@@ -326,9 +311,9 @@ const guessSubmit = (guessNumber, guessName) => {
     })
     .catch(err => console.log(err));
 
-  if (rpsObj.state === 2) {
+  if (state === 2) {
     db.ref().update({ state: 3 });
-  } else if (rpsObj.state === 3) {
+  } else if (state === 3) {
     db.ref()
       .update({ state: 4 })
       .then(() => rpsLogic())
@@ -336,16 +321,24 @@ const guessSubmit = (guessNumber, guessName) => {
   }
 };
 
+let otherUser;
 // Main Game Logic
 const rpsLogic = () => {
-  console.log("inside rpsLogic");
-  const guess1 = rpsObj.player1.guess;
-  const guess2 = rpsObj.player2.guess;
+  otherUser = rpsObj.player[oppoKey];
+  console.log(
+    "inside rpsLogic",
+    "this user=",
+    thisUser,
+    "other user=",
+    otherUser
+  );
+  const guess1 = thisUser.guess;
+  const guess2 = otherUser.guess;
   // console.log(guess1, guess2);
-  let plr1wins = rpsObj.player1.wins;
-  let plr1losses = rpsObj.player1.losses;
-  let plr2wins = rpsObj.player2.wins;
-  let plr2losses = rpsObj.player2.losses;
+  let plr1wins = thisUser.wins;
+  let plr1losses = thisUser.losses;
+  let plr2wins = otherUser.wins;
+  let plr2losses = otherUser.losses;
   // const header1 = $(".parent").data("player");
   const header1 = persist;
   let header2 = "";
@@ -367,7 +360,7 @@ const rpsLogic = () => {
     plr2wins++;
   }
 
-  db.ref("player1")
+  db.ref(`player/${persist}`)
     .update({
       winHold: false,
       losses: plr1losses,
@@ -376,7 +369,7 @@ const rpsLogic = () => {
     })
     .then(() => console.log("player 1 win/loss updated"))
     .catch(err => console.log(err));
-  db.ref("player2")
+  db.ref(`player/${oppoKey}`)
     .update({
       winHold: false,
       losses: plr2losses,
@@ -386,21 +379,23 @@ const rpsLogic = () => {
     .then(() => console.log("player 2 win/loss updated"))
     .catch(err => console.log(err));
   db.ref().update({ state: 4 });
-  winDisplay();
-  pageRefresh();
+  setTimeout(winDisplay, 100);
+  // pageRefresh();
 };
 
 // Win Loss Comment Display
 const winDisplay = () => {
+  console.log("at winDisplay this user=", thisUser, "other user=", otherUser);
   $(".rps-buttons").css({ display: "none" });
-  let oppoId = "";
-  persist === "player1" ? (oppoId = "player2") : (oppoId = "player1");
-  $("#header").text(`You ${rpsObj[persist].outcome}`);
+  // let oppoId = "";
+  // persist === "player1" ? (oppoId = "player2") : (oppoId = "player1");
+
+  $("#header").text(`You ${thisUser.outcome}`);
   $("#player").html(
-    `${rpsObj[persist].userName}<br>W ${rpsObj[persist].wins} L ${rpsObj[persist].losses}`
+    `${thisUser.userName}<br>W ${thisUser.wins} L ${thisUser.losses}`
   );
   $("#opponent").html(
-    `${rpsObj[oppoId].userName}<br>W ${rpsObj[oppoId].wins} L ${rpsObj[oppoId].losses}`
+    `${otherUser.userName}<br>W ${otherUser.wins} L ${otherUser.losses}`
   );
   $("#reset").css({ display: "block" });
   buttonHide();
