@@ -27,14 +27,16 @@ const dbDefault = {
   opponent: "",
   guess: null,
   guessName: null,
-  // hasGuessed: false,
   wins: 0,
-  losses: 0
+  losses: 0,
+  isPlayer1: false
 };
 
-db.ref()
-  .onDisconnect()
-  .update({ state: 0 });
+// const keyArr = [];
+// console.log(keyArr);
+// db.ref(`player/${persist}`)
+//   .onDisconnect()
+//   .remove();
 
 const assignStorage = () => {
   if (!persist) {
@@ -43,10 +45,17 @@ const assignStorage = () => {
       .once("value")
       .then(snapshot => {
         console.log(snapshot.key);
-        persist = snapshot.key;
+        const entry = snapshot.key;
+        persist = entry;
+        sessionStorage.setItem(player, entry);
+        // keyArr.push(entry);
+        console.log("persist =", persist, "in assignStorage");
+        // location.reload;
       });
   }
 };
+console.log("persist =", persist, "in main file");
+// assignStorage();
 
 const pageRefresh = () => {
   // $(".parent").attr({ "data-player": persist });
@@ -54,13 +63,13 @@ const pageRefresh = () => {
   // clearInterval(clearConsole);
   // console.log("clear", clear, "clearConsole", clearConsole);
   // autoClear();
-  if (!persist) assignStorage();
+  // if (!persist) assignStorage();
   db.ref().once("value", snapshot => {
     let start = snapshot.val().state;
     console.log("page refresh, state =", start, "persist =", persist);
     switch (start) {
       case 1:
-        playerDisplay(start);
+        // playerDisplay(start);
         break;
       case 2:
         playerDisplay(start);
@@ -76,7 +85,7 @@ const pageRefresh = () => {
         break;
       default:
         defaultState();
-        assignStorage();
+      // assignStorage();
     }
   });
 };
@@ -84,51 +93,8 @@ const pageRefresh = () => {
 window.onload = pageRefresh;
 // setTimeout(pageRefresh, 10000);
 
-const pl1 = db.ref("player1");
-const pl2 = db.ref("player2");
-
-// const assignStorage = () => {
-//   console.log("@ assignStorage, persist =", persist);
-//   if (persist === null) {
-//     db.ref()
-//       .orderByKey()
-//       .once("value")
-//       .then(snapshot => {
-//         snapshot.forEach(childSnapshot => {
-//           const key = childSnapshot.key;
-//           const playData = childSnapshot.val();
-//           // console.log(playData);
-//           if (playData.dataPersist) {
-//             console.log("if statement false", key);
-//             sessionStorage.setItem(player, key);
-//             db.ref(key).update({ dataPersist: true });
-//           }
-//         });
-//       });
-//   }
-// };
-
 const defaultState = () => {
-  console.log(
-    "persist =",
-    persist,
-    "player1 dataPersist =",
-    rpsObj.player1.dataPersist,
-    "at defaultState"
-  );
-  // set session storage on page load
-  // if (persist === null) {
-  //   if (!rpsObj.player1.dataPersist) {
-  //     sessionStorage.setItem(player, "player1");
-  //     pl1.update({ dataPersist: true }).then(() => {
-  //       console.log(rpsObj.player1.dataPersist);
-  //       location.reload;
-  //     });
-  //   } else if (rpsObj.player1.dataPersist) {
-  //     sessionStorage.setItem(player, "player2"); // do I need to change datapersist to true at player2?
-  //     pl2.update({ dataPersist: true });
-  //   }
-  // }
+  console.log("persist =", persist);
 
   console.log(persist, "after update at defaultState");
 
@@ -148,18 +114,19 @@ let state;
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   state = rpsObj.state;
+  console.log(rpsObj);
 });
 // let state = rpsObj.state;
 
 // Enter user name or comment button
 $(document).on("click", "#username-button", function(event) {
   event.preventDefault();
-  if (state === 0) {
-    // sessionStorage.setItem(player, "player1");
-    playerCreate();
-  } else if (state === 1) {
-    // sessionStorage.setItem(player, "player2");
-    playerCreate();
+  assignStorage();
+  // location.reload;
+  if (state <= 1) {
+    setTimeout(playerCreate, 100);
+    // } else if (state === 1) {
+    //   playerCreate();
   } else if (state > 1) commentSave();
 });
 
@@ -181,35 +148,45 @@ const playerCreate = () => {
   }
 
   if (state === 0) {
-    db.ref("player1")
-      .update({ userName: username })
-      .then(() => playerDisplay(1));
+    db.ref(`player/${persist}`).update({ userName: username });
+    // .then(() => playerDisplay(1));
     db.ref().update({ state: 1 });
   } else if (state === 1) {
-    sessionStorage.setItem(player, "player2");
-
-    db.ref("player1").update({ opponent: username });
-    db.ref("player2")
-      .update({
-        userName: username,
-        opponent: rpsObj.player1.userName
-      })
-      .then(() => playerDisplay(2));
+    db.ref(`player/${persist}`).update({ userName: username });
     db.ref().update({ state: 2 });
   }
-  // $(".parent, #header").attr({ "data-player": persist });
+  db.ref("player")
+    .orderByKey()
+    .once("value")
+    .then(snapshot => {
+      console.log("snapshot value of player =", snapshot.val());
+      snapshot.forEach(snapChild => {
+        let key = snapChild.key;
+        let val = snapChild.val();
+        console.log("in playerC", key, val);
+        let oppoKey;
+        if (key != persist) {
+          oppoKey = key;
+          db.ref(`player/${oppoKey}`).update({ opponent: username });
+          db.ref(`player/${persist}`).update({
+            opponent: rpsObj.player[oppoKey].userName
+          });
+        }
+      });
+    });
 };
 
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
-    rpsObj.state < 2 ? playerCreate() : commentSave();
+    assignStorage();
+    rpsObj.state < 2 ? setTimeout(playerCreate, 100) : commentSave();
   }
 };
 
 const playerDisplay = state => {
   // persist = sessionStorage.getItem(player);
   console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
-  const thisUser = rpsObj[persist];
+  const thisUser = rpsObj.player[persist];
   // console.log("playerDisplay", persist, thisUser);
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
@@ -304,24 +281,6 @@ $(document).on("click", "#clear", function(event) {
 const clearDatabase = () => {
   console.log("clear database happened");
   sessionStorage.clear();
-
-  // db.ref("player1")
-  //   .update(dbDefault)
-  //   .then(function() {
-  //     location.reload();
-  //   })
-  //   .catch(function(error) {
-  //     console.log("Remove failed: " + error.message);
-  //   });
-
-  // db.ref("player2")
-  //   .update(dbDefault)
-  //   .then(function() {
-  //     location.reload();
-  //   })
-  //   .catch(function(error) {
-  //     console.log("Remove failed: " + error.message);
-  //   });
 
   db.ref()
     .update({ state: 0, comment: "", player: "" })
