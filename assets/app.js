@@ -19,17 +19,16 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
+console.log("persist in main file =", persist);
 let clear;
 let clearConsole;
 const dbDefault = {
-  // dataPersist: false,
-  userName: 0,
+  userName: "",
   opponent: "",
   guess: null,
   guessName: null,
   wins: 0,
   losses: 0
-  // isPlayer1: false
 };
 
 const assignStorage = () => {
@@ -59,7 +58,7 @@ const pageRefresh = () => {
         playerDisplay(start);
         break;
       case 2:
-        playerDisplay(start);
+        setTimeout(playerDisplay(start), 100);
         commentDisplay();
         break;
       case 3:
@@ -81,10 +80,13 @@ window.onload = pageRefresh;
 const defaultState = () => {
   $("#header").text("rock paper scissors");
   $("#player").html("Welcome!<br>Add user name?");
+  $("#opponent").empty();
   $("#no-button")
     .css({ display: "block" })
     .text("no thanks");
-  $("#text-input").attr({ placeholder: "add username" });
+  $("#text-input")
+    .attr({ placeholder: "add username" })
+    .css({ display: "block" });
   $("#username-button")
     .css({ display: "block" })
     .text("submit user name");
@@ -177,10 +179,10 @@ const playerDisplay = state => {
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
-    } else if (state === 1 && rpsObj.player[persist].userName) {
+    } else if (state === 1 && thisUser.userName) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
-    } else if (state === 1 && !rpsObj[persist].opponent) {
+    } else if (state === 1 && !thisUser.opponent) {
       defaultState();
     } else if (state === 3) {
       $("#opponent").text(thisUser.opponent);
@@ -220,7 +222,7 @@ const commentSave = () => {
     : $("#text-input").attr({ placeholder: "please type a comment you dope" });
 };
 
-// Comment display TODO make other players comment appear on left
+// Comment display
 const commentDisplay = () => {
   // console.log("@commentDisplay, state =", state, "persist =", persist);
   const query = db.ref("comment").orderByKey();
@@ -266,8 +268,7 @@ const clearDatabase = () => {
     .catch(function(error) {
       console.log("Remove failed: " + error.message);
     });
-  pageRefresh();
-  console.log("cleared database");
+  location.reload;
 };
 
 const autoClear = () => {
@@ -291,9 +292,9 @@ $(document).on("click", ".rps-buttons", function(event) {
   $("#comment-out").empty();
 });
 
-let otherUser;
+let otherUser; // wrong place
 const guessSubmit = (guessNumber, guessName) => {
-  otherUser = rpsObj.player[oppoKey];
+  otherUser = rpsObj.player[thisUser.oppoKey];
   console.log(thisUser, "at guess submit, other user=", otherUser);
   db.ref(`player/${persist}`)
     .update({ guess: guessNumber, guessName: guessName })
@@ -328,9 +329,6 @@ const rpsLogic = () => {
   let plr1losses = thisUser.losses;
   let plr2wins = otherUser.wins;
   let plr2losses = otherUser.losses;
-  const header1 = persist;
-  let header2 = "";
-  header1 === "player1" ? (header2 = "player2") : (header2 = "player1");
   let outcome;
   let oppoOutcome;
   if (guess1 === guess2) {
@@ -350,16 +348,14 @@ const rpsLogic = () => {
 
   db.ref(`player/${persist}`)
     .update({
-      winHold: false,
       losses: plr1losses,
       wins: plr1wins,
       outcome: outcome
     })
     .then(() => console.log("player 1 win/loss updated"))
     .catch(err => console.log(err));
-  db.ref(`player/${oppoKey}`)
+  db.ref(`player/${thisUser.oppoKey}`)
     .update({
-      winHold: false,
       losses: plr2losses,
       wins: plr2wins,
       outcome: oppoOutcome
@@ -371,7 +367,7 @@ const rpsLogic = () => {
 
 // Win Loss Comment Display
 const winDisplay = () => {
-  thisUser = rpsObj.player[persist];
+  thisUser = rpsObj.player[persist]; // 370-372 redundant?
   oppoKey = rpsObj.player[persist].oppoKey;
   otherUser = rpsObj.player[oppoKey];
   console.log("at winDisplay this user=", thisUser, "other user=", otherUser);
@@ -402,11 +398,18 @@ $(document).on("click", "#reset", function() {
       const key = childSnapshot.key;
       // childData will be the actual contents of the child
       const guessdata = childSnapshot.val();
-      console.log("key=", key, "guessdata=", guessdata);
+      // console.log("key=", key, "guessdata=", guessdata);
       if (guessdata.guessName)
         db.ref(`player/${key}`).update({ guessName: null, guess: null });
     });
   });
 });
 
-db.ref().on("child_changed", () => pageRefresh());
+db.ref().on("child_changed", snapshot => {
+  // console.log("at child changed", snapshot.val());
+  if (snapshot.val() === 0) {
+    sessionStorage.clear();
+    location.reload();
+  }
+  pageRefresh();
+});
