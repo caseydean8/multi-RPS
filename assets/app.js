@@ -19,19 +19,19 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
-let oppoPersist = sessionStorage.getItem(opponent);
-console.log("this player=", persist, "opponent=", oppoPersist);
+let oppoPersist = sessionStorage.getItem(opponent); // can remove this aspect, doesn't work and is unnecessary
+// console.log("this player=", persist, "opponent=", oppoPersist);
 let clear;
 let clearConsole;
 const dbDefault = {
-  dataPersist: false,
+  // dataPersist: false,
   userName: 0,
   opponent: "",
   guess: null,
   guessName: null,
   wins: 0,
   losses: 0,
-  isPlayer1: false
+  // isPlayer1: false
 };
 
 const assignStorage = () => {
@@ -40,12 +40,12 @@ const assignStorage = () => {
       .push(dbDefault)
       .once("value")
       .then(snapshot => {
-        console.log(snapshot.key);
+        // console.log(snapshot.key);
         const entry = snapshot.key;
         persist = entry;
         sessionStorage.setItem(player, entry);
         // keyArr.push(entry);
-        console.log("persist =", persist, "in assignStorage");
+        // console.log("persist =", persist, "in assignStorage");
         // location.reload;
       });
   }
@@ -74,7 +74,7 @@ const pageRefresh = () => {
         commentDisplay();
         break;
       case 4:
-        winDisplay(); // 342
+       setTimeout( winDisplay, 100); // 342
         commentDisplay();
         break;
       default:
@@ -88,9 +88,7 @@ window.onload = pageRefresh;
 // setTimeout(pageRefresh, 10000);
 
 const defaultState = () => {
-  console.log("persist =", persist);
-
-  console.log(persist, "after update at defaultState");
+  // console.log("persist =", persist, "after update at defaultState");
 
   $("#header").text("rock paper scissors");
   $("#player").html("Welcome!<br>Add user name?");
@@ -122,7 +120,7 @@ $(document).on("click", "#username-button", function(event) {
 // const thisPlayer = `player/${persist}`;
 let oppoKey;
 const playerCreate = () => {
-  console.log("playerCreate, persist =", persist);
+  // console.log("playerCreate, persist =", persist);
   const userAddedName = $("#text-input")
     .val()
     .trim();
@@ -130,6 +128,7 @@ const playerCreate = () => {
   if (!userAddedName && state === 0) {
     username = "player 1";
   } else if (!userAddedName && state === 1) {
+    // change to ternary
     username = "player 2";
   } else {
     username = userAddedName;
@@ -143,25 +142,29 @@ const playerCreate = () => {
     db.ref(`player/${persist}`).update({ userName: username });
     db.ref().update({ state: 2 });
   }
+
   db.ref("player")
     .orderByKey()
     .once("value")
     .then(snapshot => {
-      console.log("snapshot value of player =", snapshot.val());
+      // console.log("snapshot value of player =", snapshot.val());
       snapshot.forEach(snapChild => {
         let key = snapChild.key;
-        // let val = snapChild.val();
-        // console.log("in playerC", key, val);
+        
         if (key != persist) {
           oppoKey = key;
-          otherUser = rpsObj.player[oppoKey]
-          db.ref(`player/${oppoKey}`).update({ opponent: username, oppoKey: persist });
+          otherUser = rpsObj.player[oppoKey];
+          db.ref(`player/${oppoKey}`).update({
+            opponent: username,
+            oppoKey: persist
+          });
           db.ref(`player/${persist}`).update({
             opponent: otherUser.userName,
             oppoKey: oppoKey
           });
         }
       });
+      console.log("this player key=", persist, "opponent key=", oppoKey)
     });
 };
 
@@ -174,7 +177,7 @@ const checkSubmit = e => {
 
 let thisUser;
 const playerDisplay = state => {
-  console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
+  // console.log("@ playerDisplay, state=", rpsObj.state, "persist=", persist);
   thisUser = rpsObj.player[persist];
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
@@ -232,7 +235,7 @@ const commentSave = () => {
 
 // Comment display TODO make other players comment appear on left
 const commentDisplay = () => {
-  console.log("@commentDisplay, state =", state, "persist =", persist);
+  // console.log("@commentDisplay, state =", state, "persist =", persist);
   const query = db.ref("comment").orderByKey();
 
   query
@@ -301,7 +304,9 @@ $(document).on("click", ".rps-buttons", function(event) {
   $("#comment-out").empty();
 });
 
+let otherUser;
 const guessSubmit = (guessNumber, guessName) => {
+  otherUser = rpsObj.player[oppoKey];
   console.log(thisUser, "at guess submit, other user=", otherUser);
   db.ref(`player/${persist}`)
     .update({ guess: guessNumber, guessName: guessName })
@@ -321,10 +326,8 @@ const guessSubmit = (guessNumber, guessName) => {
   }
 };
 
-let otherUser;
 // Main Game Logic
 const rpsLogic = () => {
-  otherUser = rpsObj.player[oppoKey];
   console.log(
     "inside rpsLogic",
     "this user=",
@@ -379,12 +382,15 @@ const rpsLogic = () => {
     .then(() => console.log("player 2 win/loss updated"))
     .catch(err => console.log(err));
   db.ref().update({ state: 4 });
-  setTimeout(winDisplay, 100);
+  // setTimeout(winDisplay, 100);
   // pageRefresh();
 };
 
 // Win Loss Comment Display
 const winDisplay = () => {
+  thisUser = rpsObj.player[persist];
+  oppoKey = rpsObj.player[persist].oppoKey;
+  otherUser = rpsObj.player[oppoKey];
   console.log("at winDisplay this user=", thisUser, "other user=", otherUser);
   $(".rps-buttons").css({ display: "none" });
   // let oppoId = "";
