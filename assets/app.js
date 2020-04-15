@@ -45,12 +45,9 @@ const assignStorage = () => {
 };
 
 const pageRefresh = () => {
-  // $(".parent").attr({ "data-player": persist });
   // clearInterval(clear);
   // clearInterval(clearConsole);
-  // console.log("clear", clear, "clearConsole", clearConsole);
   // autoClear();
-  // if (!persist) assignStorage();
   db.ref().once("value", snapshot => {
     let start = snapshot.val().state;
     switch (start) {
@@ -108,7 +105,6 @@ $(document).on("click", "#username-button", function(event) {
 });
 
 // Send Player object to database Step 1.1
-let oppoKey;
 const playerCreate = () => {
   const userAddedName = $("#text-input")
     .val()
@@ -136,24 +132,20 @@ const playerCreate = () => {
     .orderByKey()
     .once("value")
     .then(snapshot => {
-      // console.log("snapshot value of player =", snapshot.val());
       snapshot.forEach(snapChild => {
         let key = snapChild.key;
-
         if (key != persist) {
-          oppoKey = key;
-          otherUser = rpsObj.player[oppoKey];
-          db.ref(`player/${oppoKey}`).update({
+          otherUser = rpsObj.player[key];
+          db.ref(`player/${key}`).update({
             opponent: username,
             oppoKey: persist
           });
           db.ref(`player/${persist}`).update({
             opponent: otherUser.userName,
-            oppoKey: oppoKey
+            oppoKey: key
           });
         }
       });
-      console.log("this player key=", persist, "opponent key=", oppoKey);
     });
 };
 
@@ -368,7 +360,7 @@ const rpsLogic = () => {
 // Win Loss Comment Display
 const winDisplay = () => {
   thisUser = rpsObj.player[persist]; // 370-372 redundant?
-  oppoKey = rpsObj.player[persist].oppoKey;
+  let oppoKey = rpsObj.player[persist].oppoKey;
   otherUser = rpsObj.player[oppoKey];
   console.log("at winDisplay this user=", thisUser, "other user=", otherUser);
   $(".rps-buttons").css({ display: "none" });
@@ -407,6 +399,7 @@ $(document).on("click", "#reset", function() {
 
 db.ref().on("child_changed", snapshot => {
   // console.log("at child changed", snapshot.val());
+  asyn = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
   if (snapshot.val() === 0) {
     sessionStorage.clear();
     location.reload();
