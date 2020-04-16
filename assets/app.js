@@ -35,21 +35,23 @@ const pageRefresh = () => {
   // clearInterval(clearConsole);
   // autoClear();
   db.ref().once("value", snapshot => {
-    let start = snapshot.val().state;
-    switch (start) {
+    state = snapshot.val().state;
+    switch (state) {
       case 1:
         playerDisplay();
         break;
       case 2:
-        setTimeout(playerDisplay(start), 100); // why is the timeout here?
+        playerDisplay();
+        // setTimeout(playerDisplay(), 100); // why is the timeout here?
         commentDisplay();
         break;
       case 3:
-        playerDisplay(start); // 125
+        playerDisplay(); // 125
         commentDisplay();
         break;
       case 4:
-        setTimeout(winDisplay, 100); // 342
+        // winDisplay();
+        setTimeout(winDisplay, 200); // 342
         commentDisplay();
         break;
       default:
@@ -157,7 +159,7 @@ const otherPlayerCreate = username => {
     .catch(err => console.log(err));
 };
 
-const playerDisplay = state => {
+const playerDisplay = () => {
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
     $("#reset").css({ display: "none" });
@@ -181,7 +183,7 @@ const playerDisplay = state => {
         $("#header").text(`you chose ${thisUser.guessName}`);
       } else {
         $(".rps-buttons").css({ display: "block" });
-        $("#header").text("Rock, Paper, or Scissors?");
+        // $("#header").text("Rock, Paper, or Scissors?");
       }
     }
     buttonHide();
@@ -290,6 +292,7 @@ const guessSubmit = (guessNumber, guessName) => {
     db.ref().update({ state: 3 });
   } else if (state === 3) {
     // } else { // check if can be made ternary
+    // $("#header").empty(); // to stop header flash at state 4
     db.ref()
       .update({ state: 4 })
       .then(() => rpsLogic())
@@ -299,28 +302,24 @@ const guessSubmit = (guessNumber, guessName) => {
 
 // Main Game Logic
 const rpsLogic = () => {
-  // console.log("rpsObj at rpsLogic", rpsObj);
-  // oppoKey = thisUser.oppoKey;
-  // otherUser = rpsObj.player[oppoKey];
-  // console.log(
-  //   "inside rpsLogic",
-  //   "this user=",
-  //   thisUser,
-  //   "other user=",
-  //   otherUser
-  // );
-
   let guess1 = thisUser.guess;
   let guess2 = otherUser.guess;
+
   let plr1wins = thisUser.wins;
   let plr1losses = thisUser.losses;
   let plr2wins = otherUser.wins;
   let plr2losses = otherUser.losses;
+
   let outcome;
   let oppoOutcome;
+
   if (guess1 === guess2) {
     outcome = "tie";
     oppoOutcome = "tie";
+    plr1wins += .5;
+    plr1losses += .5;
+    plr2wins += .5;
+    plr2losses += .5;
   } else if ((guess1 - guess2 + 3) % 3 === 1) {
     outcome = "win";
     oppoOutcome = "lose";
@@ -340,6 +339,7 @@ const rpsLogic = () => {
       outcome: outcome
     })
     .catch(err => console.log(err));
+
   db.ref(`player/${thisUser.oppoKey}`)
     .update({
       losses: plr2losses,
@@ -347,17 +347,13 @@ const rpsLogic = () => {
       outcome: oppoOutcome
     })
     .catch(err => console.log(err));
+
   db.ref().update({ state: 4 });
 };
 
 // Win Loss Comment Display
 const winDisplay = () => {
-  // console.log(thisUser, "= thisUser", otherUser, "otherUser at winDisplay");
-
-  // thisUser = rpsObj.player[persist]; // 370-372 redundant?
-  // let oppoKey = thisUser.oppoKey;
-  // otherUser = rpsObj.player[oppoKey];
-  // console.log("at winDisplay this user=", thisUser, "other user=", otherUser);
+  
   $(".rps-buttons").css({ display: "none" });
 
   $("#header").text(`You ${thisUser.outcome}`);
@@ -391,7 +387,7 @@ $(document).on("click", "#reset", function() {
 
 db.ref().on("child_changed", snapshot => {
   console.log("does child changed create error?");
-  async = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
+  // async = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
   if (snapshot.val() === 0) {
     sessionStorage.clear();
     location.reload();
