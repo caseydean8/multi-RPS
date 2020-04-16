@@ -31,9 +31,9 @@ const dbDefault = {
 };
 
 const pageRefresh = () => {
-  // clearInterval(clear);
-  // clearInterval(clearConsole);
-  // autoClear();
+  clearTimeout(clear);
+  clearTimeout(clearConsole);
+  autoClear();
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
     switch (state) {
@@ -74,7 +74,7 @@ const defaultState = () => {
     .css({ display: "block" });
   $("#username-button")
     .css({ display: "block" })
-    .text("submit user name");
+    .text("submit");
 };
 
 let state;
@@ -194,7 +194,7 @@ const playerDisplay = () => {
 
 const buttonHide = () => {
   $("#no-button").css({ display: "none" });
-  $("#username-button").text("submit comment");
+  $("#username-button").text("comment");
   $("#text-input")
     .val("")
     .attr({ placeholder: "add comment" });
@@ -262,9 +262,9 @@ const clearDatabase = () => {
 };
 
 const autoClear = () => {
-  clearConsole = setTimeout(logClear, 300000);
   clear = setTimeout(clearDatabase, 300000); // possibly change to 180000 (3 minutes)
-  console.log(clear, clearConsole, "at autoClear");
+  clearConsole = setTimeout(logClear, 300000);
+  // console.log(clear, clearConsole, "at autoClear");
 };
 
 const logClear = () => console.log("autoClear occured");
@@ -314,8 +314,7 @@ const rpsLogic = () => {
   let oppoOutcome;
 
   if (guess1 === guess2) {
-    outcome = "tie";
-    oppoOutcome = "tie";
+    outcome = oppoOutcome = "tie";
     plr1wins += .5;
     plr1losses += .5;
     plr2wins += .5;
@@ -358,10 +357,10 @@ const winDisplay = () => {
 
   $("#header").text(`You ${thisUser.outcome}`);
   $("#player").html(
-    `${thisUser.userName}<br>W ${thisUser.wins} L ${thisUser.losses}`
+    `${thisUser.userName}<br>W: ${thisUser.wins} L: ${thisUser.losses}`
   );
   $("#opponent").html(
-    `${otherUser.userName}<br>W ${otherUser.wins} L ${otherUser.losses}`
+    `${otherUser.userName}<br>W: ${otherUser.wins} L: ${otherUser.losses}`
   );
   $("#reset").css({ display: "block" });
   buttonHide();
@@ -386,7 +385,7 @@ $(document).on("click", "#reset", function() {
 });
 
 db.ref().on("child_changed", snapshot => {
-  console.log("does child changed create error?");
+  // console.log("does child changed create error?");
   // async = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
   if (snapshot.val() === 0) {
     sessionStorage.clear();
