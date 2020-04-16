@@ -38,10 +38,10 @@ const pageRefresh = () => {
     let start = snapshot.val().state;
     switch (start) {
       case 1:
-        playerDisplay(start);
+        playerDisplay();
         break;
       case 2:
-        setTimeout(playerDisplay(start), 100);
+        setTimeout(playerDisplay(start), 100); // why is the timeout here?
         commentDisplay();
         break;
       case 3:
@@ -111,12 +111,12 @@ const assignStorage = () => {
     });
 };
 
-// let otherUser;
 // Send Player object to database Step 1.1
 const playerCreate = () => {
   const userAddedName = $("#text-input")
     .val()
     .trim();
+
   let username;
   if (!userAddedName) {
     state ? (username = "player 2") : (username = "player 1");
@@ -132,39 +132,32 @@ const playerCreate = () => {
     db.ref().update({ state: 2 });
   }
   otherPlayerCreate(username);
-  
 };
 
-const otherPlayerCreate = (username) => {
+const otherPlayerCreate = username => {
   db.ref("player")
-  .orderByKey()
-  .once("value")
-  .then(snapshot => {
-    snapshot.forEach(snapChild => {
-      let key = snapChild.key;
-      if (key != persist) {
-        otherUser = rpsObj.player[key];
-        console.log(otherUser, "otherUser at playerCreate");
-        console.log(otherUser.userName);
-        console.log(rpsObj);
-        db.ref(`player/${key}`).update({
-          opponent: username,
-          oppoKey: persist
-        });
-        db.ref(`player/${persist}`).update({
-          opponent: otherUser.userName,
-          oppoKey: key
-        });
-      }
-    });
-  })
-  .catch(err => console.log(err));
-}
+    .orderByKey()
+    .once("value")
+    .then(snapshot => {
+      snapshot.forEach(snapChild => {
+        const key = snapChild.key;
+        if (key != persist) {
+          otherUser = rpsObj.player[key]; // might be redundant
+          db.ref(`player/${key}`).update({
+            opponent: username,
+            oppoKey: persist
+          });
+          db.ref(`player/${persist}`).update({
+            opponent: otherUser.userName,
+            oppoKey: key
+          });
+        }
+      });
+    })
+    .catch(err => console.log(err));
+};
 
-// let thisUser = rpsObj.player[persist];
 const playerDisplay = state => {
-  // thisUser = rpsObj.player[persist];
-  // console.log("thisUser=", thisUser, "at playerDisplay");
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
     $("#reset").css({ display: "none" });
@@ -183,7 +176,7 @@ const playerDisplay = state => {
       defaultState();
     } else if (state === 3) {
       $("#opponent").text(thisUser.opponent);
-      if (thisUser.guessName) {
+      if (!otherUser.guessName) {
         $(".rps-buttons").css({ display: "none" });
         $("#header").text(`you chose ${thisUser.guessName}`);
       } else {
@@ -282,17 +275,13 @@ $(document).on("click", ".rps-buttons", function(event) {
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
   guessSubmit(dbGuess, guess);
-  $("#header").text(`you chose ${guess}`);
   $(".rps-buttons").css({ display: "none" });
 });
 
 const guessSubmit = (guessNumber, guessName) => {
-  // console.log(thisUser, "at guess submit, otherUser=", otherUser);
   db.ref(`player/${persist}`)
     .update({ guess: guessNumber, guessName: guessName })
     .then(() => {
-      console.log("guess updated for", persist, "at guessSubmit");
-      // setTimeout(pageRefresh, 100);
       pageRefresh;
     })
     .catch(err => console.log(err));
@@ -300,7 +289,7 @@ const guessSubmit = (guessNumber, guessName) => {
   if (state === 2) {
     db.ref().update({ state: 3 });
   } else if (state === 3) {
-    // } else {
+    // } else { // check if can be made ternary
     db.ref()
       .update({ state: 4 })
       .then(() => rpsLogic())
@@ -313,13 +302,13 @@ const rpsLogic = () => {
   // console.log("rpsObj at rpsLogic", rpsObj);
   // oppoKey = thisUser.oppoKey;
   // otherUser = rpsObj.player[oppoKey];
-  console.log(
-    "inside rpsLogic",
-    "this user=",
-    thisUser,
-    "other user=",
-    otherUser
-  );
+  // console.log(
+  //   "inside rpsLogic",
+  //   "this user=",
+  //   thisUser,
+  //   "other user=",
+  //   otherUser
+  // );
 
   let guess1 = thisUser.guess;
   let guess2 = otherUser.guess;
@@ -350,7 +339,6 @@ const rpsLogic = () => {
       wins: plr1wins,
       outcome: outcome
     })
-    .then(() => console.log("player 1 win/loss updated"))
     .catch(err => console.log(err));
   db.ref(`player/${thisUser.oppoKey}`)
     .update({
@@ -358,14 +346,13 @@ const rpsLogic = () => {
       wins: plr2wins,
       outcome: oppoOutcome
     })
-    .then(() => console.log("player 2 win/loss updated"))
     .catch(err => console.log(err));
   db.ref().update({ state: 4 });
 };
 
 // Win Loss Comment Display
 const winDisplay = () => {
-  console.log(thisUser, "= thisUser", otherUser, "otherUser at winDisplay");
+  // console.log(thisUser, "= thisUser", otherUser, "otherUser at winDisplay");
 
   // thisUser = rpsObj.player[persist]; // 370-372 redundant?
   // let oppoKey = thisUser.oppoKey;
@@ -386,7 +373,6 @@ const winDisplay = () => {
 
 // RESET BUTTON / PLAY AGAIN
 $(document).on("click", "#reset", function() {
-  // $("#comment-out").empty();
   db.ref().update({ state: 2 });
 
   const reset = db.ref("player").orderByKey();
@@ -404,6 +390,7 @@ $(document).on("click", "#reset", function() {
 });
 
 db.ref().on("child_changed", snapshot => {
+  console.log("does child changed create error?");
   async = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
   if (snapshot.val() === 0) {
     sessionStorage.clear();
