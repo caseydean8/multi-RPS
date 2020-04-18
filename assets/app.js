@@ -19,8 +19,8 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
-let clear;
-let clearConsole;
+// let clear;
+// let clearConsole;
 const dbDefault = {
   userName: "",
   opponent: "",
@@ -30,10 +30,10 @@ const dbDefault = {
   losses: 0
 };
 
+// console.log(moment().format("MMM D YYYY, h:mm a"));
+
 const pageRefresh = () => {
-  clearTimeout(clear);
-  clearTimeout(clearConsole);
-  autoClear();
+
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
     switch (state) {
@@ -80,29 +80,38 @@ const defaultState = () => {
 let state;
 let thisUser;
 let otherUser;
+let timer;
+
 // Set rps.Object
 db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   state = rpsObj.state;
   thisUser = rpsObj.player[persist];
+  if (state >= 1) timer = rpsObj.timeCleared.timer;
   if (state > 2) otherUser = rpsObj.player[thisUser.oppoKey];
 });
 
 // Enter user name or comment button
 $(document).on("click", "#username-button", function(e) {
   e.preventDefault();
-  if (!persist) assignStorage();
-  state < 2 ? setTimeout(playerCreate, 100) : commentSave();
+  gameSetup();
 });
 
 const checkSubmit = e => {
   if (e && e.keyCode == 13) {
-    if (!persist) assignStorage();
-    state < 2 ? setTimeout(playerCreate, 100) : commentSave();
+    gameSetup();
   }
 };
 
+const gameSetup = () => {
+  autoClear();
+  db.ref("timeCleared").update({ buttonClear: time });
+  if (!persist) assignStorage();
+  state < 2 ? setTimeout(playerCreate, 100) : commentSave();
+}
+
 const assignStorage = () => {
+  // autoClear();
   db.ref("player")
     .push(dbDefault)
     .once("value")
@@ -238,9 +247,11 @@ const commentDisplay = () => {
     .catch(err => console.log(err));
 };
 
+let time = moment().format("MMM D YYYY, h:mm:ss a");
 // Clear database button
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
+  db.ref("timeCleared").update({ buttonClear: time });
   clearDatabase();
   pageRefresh(); // probably redundant
 });
@@ -251,33 +262,49 @@ const clearDatabase = () => {
   sessionStorage.clear();
 
   db.ref()
-    .update({ state: 0, comment: "", player: "" })
+    .update({
+      state: 0,
+      comment: "",
+      player: ""
+      // timeCleared: { clearData: time }
+    })
     .then(function() {
       location.reload();
     })
     .catch(function(error) {
       console.log("Remove failed: " + error.message);
     });
+
+  time = moment().format("MMM D YYYY, h:mm:ss a");
+
+  db.ref("timeCleared").update({ lastTimeCleared: `Cleared at ${time}` });
   location.reload;
 };
-
+// let clear;
 const autoClear = () => {
-  clear = setTimeout(clearDatabase, 300000); // possibly change to 180000 (3 minutes)
-  clearConsole = setTimeout(logClear, 300000);
+  // clear = rpsObj.timeCleared.timer;
+  clearTimeout(timer);
+  timer = setTimeout(clearDatabase, 180000); // possibly change to 180000 (3 minutes)
+  // clearConsole = setTimeout(logClear, 300000);
+  const autoClearTime = `autoClear set at ${time}`;
+  console.log(timer, autoClearTime);
+  db.ref("timeCleared").update({ autoClearTime: autoClearTime, timer: timer });
   // console.log(clear, clearConsole, "at autoClear");
 };
 
-const logClear = () => console.log("autoClear occured");
-
+// const logClear = () => console.log("autoClear occured");
+// autoClear();
 // Rock Paper Scissors Button
 $(document).on("click", ".rps-buttons", function(event) {
   event.preventDefault();
+  autoClear();
+  db.ref("timeCleared").update({ buttonClear: time });
   const guess = $(this).attr("id");
   let dbGuess = 0;
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
   guessSubmit(dbGuess, guess);
-  $(".rps-buttons").css({ display: "none" });
+  $(".rps-buttons").css({ display: "none" }); // redundant?
 });
 
 const guessSubmit = (guessNumber, guessName) => {
@@ -315,10 +342,10 @@ const rpsLogic = () => {
 
   if (guess1 === guess2) {
     outcome = oppoOutcome = "tie";
-    plr1wins += .5;
-    plr1losses += .5;
-    plr2wins += .5;
-    plr2losses += .5;
+    plr1wins += 0.5;
+    plr1losses += 0.5;
+    plr2wins += 0.5;
+    plr2losses += 0.5;
   } else if ((guess1 - guess2 + 3) % 3 === 1) {
     outcome = "win";
     oppoOutcome = "lose";
@@ -352,7 +379,6 @@ const rpsLogic = () => {
 
 // Win Loss Comment Display
 const winDisplay = () => {
-  
   $(".rps-buttons").css({ display: "none" });
 
   $("#header").text(`You ${thisUser.outcome}`);
