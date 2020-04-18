@@ -33,6 +33,7 @@ const dbDefault = {
 // console.log(moment().format("MMM D YYYY, h:mm a"));
 
 const pageRefresh = () => {
+  console.log(rpsObj, "at page refresh");
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
     switch (state) {
@@ -168,7 +169,7 @@ const playerDisplay = () => {
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
     $("#reset").css({ display: "none" });
-    
+
     if (state === 2) {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
@@ -191,7 +192,6 @@ const playerDisplay = () => {
         $("#header").text(`you chose ${thisUser.guessName}`);
       } else {
         $(".rps-buttons").css({ display: "block" });
-        // $("#header").text("Rock, Paper, or Scissors?");
       }
     }
     buttonHide();
@@ -303,7 +303,7 @@ $(document).on("click", ".rps-buttons", function(event) {
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
   guessSubmit(dbGuess, guess);
-  backgroundDisplay(guess);
+  // backgroundDisplay(guess);
   $(".rps-buttons").css({ display: "none" }); // redundant?
 });
 
@@ -338,12 +338,13 @@ const guessSubmit = (guessNumber, guessName) => {
 
   if (state === 2) {
     db.ref().update({ state: 3 });
+    backgroundDisplay(guessName);
   } else if (state === 3) {
     // } else { // check if can be made ternary
     // $("#header").empty(); // to stop header flash at state 4
     db.ref()
       .update({ state: 4 })
-      .then(() => rpsLogic())
+      .then(() => {rpsLogic(); backgroundDisplay(guessName);})
       .catch(err => console.log(err));
   }
 };
@@ -411,14 +412,16 @@ const winDisplay = () => {
   );
   $("#reset").css({ display: "block" });
   buttonHide();
+  // if(thisUser.outcome === "lose") backgroundDisplay(otherUser.guessName);
 };
 
 // RESET BUTTON / PLAY AGAIN
 $(document).on("click", "#reset", function() {
+  autoClear();
   db.ref().update({ state: 2 });
   //  $("#gif").css({"background-image": "none"});
   const reset = db.ref("player").orderByKey();
-
+  
   reset.once("value").then(snapshot => {
     snapshot.forEach(childSnapshot => {
       // key is the comment identifier
@@ -426,15 +429,21 @@ $(document).on("click", "#reset", function() {
       // childData will be the actual contents of the child
       const guessdata = childSnapshot.val();
       if (guessdata.guessName)
-        db.ref(`player/${key}`).update({ guessName: null, guess: null });
+      db.ref(`player/${key}`).update({ guessName: null, guess: null });
     });
-  });
+  })
+  // pageRefresh();
+  // .then(function() {
+  //   $("#gif").css({ "background-image": "none" }); // maybe redundant, also in playerDisplay at state 2});
 });
 
 db.ref().on("child_changed", snapshot => {
-  if (snapshot.val() === 0) {
+  changedState = snapshot.val();
+  if (changedState === 0 ) {
     sessionStorage.clear();
     location.reload();
+  } else if (changedState === 2) {
+    location.reload(); // don't know why this worked, try moving to play again button
   }
   pageRefresh();
 });
