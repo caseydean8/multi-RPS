@@ -33,7 +33,6 @@ const dbDefault = {
 // console.log(moment().format("MMM D YYYY, h:mm a"));
 
 const pageRefresh = () => {
-
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
     switch (state) {
@@ -98,20 +97,17 @@ $(document).on("click", "#username-button", function(e) {
 });
 
 const checkSubmit = e => {
-  if (e && e.keyCode == 13) {
-    gameSetup();
-  }
+  if (e && e.keyCode == 13) gameSetup();
 };
 
 const gameSetup = () => {
-  autoClear();
   db.ref("timeCleared").update({ buttonClear: time });
   if (!persist) assignStorage();
   state < 2 ? setTimeout(playerCreate, 100) : commentSave();
-}
+  autoClear();
+};
 
 const assignStorage = () => {
-  // autoClear();
   db.ref("player")
     .push(dbDefault)
     .once("value")
@@ -172,6 +168,7 @@ const playerDisplay = () => {
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
     $("#reset").css({ display: "none" });
+    
     if (state === 2) {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
@@ -180,6 +177,8 @@ const playerDisplay = () => {
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
+      $("#gif").css({ "background-image": "none" });
+
     } else if (state === 1 && thisUser.userName) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
@@ -213,6 +212,7 @@ const commentSave = () => {
   const comment = $("#text-input")
     .val()
     .trim();
+
   comment
     ? db
         .ref("comment")
@@ -248,6 +248,7 @@ const commentDisplay = () => {
 };
 
 let time = moment().format("MMM D YYYY, h:mm:ss a");
+
 // Clear database button
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
@@ -292,8 +293,6 @@ const autoClear = () => {
   // console.log(clear, clearConsole, "at autoClear");
 };
 
-// const logClear = () => console.log("autoClear occured");
-// autoClear();
 // Rock Paper Scissors Button
 $(document).on("click", ".rps-buttons", function(event) {
   event.preventDefault();
@@ -304,8 +303,30 @@ $(document).on("click", ".rps-buttons", function(event) {
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
   guessSubmit(dbGuess, guess);
+  backgroundDisplay(guess);
   $(".rps-buttons").css({ display: "none" }); // redundant?
 });
+
+const backgroundDisplay = choice => {
+  switch (choice) {
+    case "rock":
+      $("#gif").css({
+        "background-image": `url("https://media.giphy.com/media/sSfxdaLf3tive/giphy.gif")`
+      });
+      //https://media.giphy.com/media/I1SLS2om702u4/giphy-downsized.gif
+      // https://media.giphy.com/media/9Dgf4pFMzSrTrE4Urj/giphy.gif
+      break;
+    case "paper":
+      $("#gif").css({
+        "background-image": `url("https://media.giphy.com/media/VTxmwaCEwSlZm/giphy.gif")`
+      });
+      break;
+    default:
+      $("#gif").css({
+        "background-image": `url("https://media.giphy.com/media/M7ZLjbUplnd3q/giphy.gif")`
+      });
+  }
+};
 
 const guessSubmit = (guessNumber, guessName) => {
   db.ref(`player/${persist}`)
@@ -395,7 +416,7 @@ const winDisplay = () => {
 // RESET BUTTON / PLAY AGAIN
 $(document).on("click", "#reset", function() {
   db.ref().update({ state: 2 });
-
+  //  $("#gif").css({"background-image": "none"});
   const reset = db.ref("player").orderByKey();
 
   reset.once("value").then(snapshot => {
@@ -411,8 +432,6 @@ $(document).on("click", "#reset", function() {
 });
 
 db.ref().on("child_changed", snapshot => {
-  // console.log("does child changed create error?");
-  // async = true; // trying to fix Synchronous XMLHttpRequest on the main thread error
   if (snapshot.val() === 0) {
     sessionStorage.clear();
     location.reload();
