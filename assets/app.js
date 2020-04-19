@@ -64,9 +64,9 @@ const pageRefresh = () => {
 window.onload = pageRefresh;
 
 const defaultState = () => {
-  $("#header").text("rock paper scissors");
-  $("#player").html("Welcome!<br>Add user name?");
   $("#opponent").empty();
+  $("#header-1").css({display: "block"}).text("rock paper scissors");
+  $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
     .css({ display: "block" })
     .text("no thanks");
@@ -103,9 +103,9 @@ const checkSubmit = e => {
 };
 
 const gameSetup = () => {
-  db.ref("timeCleared").update({ buttonClear: time });
   if (!persist) assignStorage();
   state < 2 ? setTimeout(playerCreate, 100) : commentSave();
+  db.ref("timeCleared").update({ buttonClear: time });
   autoClear();
 };
 
@@ -175,12 +175,14 @@ const playerDisplay = () => {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
-      $("#header").text("Rock, Paper, or Scissors?");
+      $(".header").empty();
+      // $("#header").text("Rock, Paper, or Scissors?");
+      // $("#header").fadeIn("slow");
+      $("#header-2").css({display: "block"}).text("rock, paper, or scissors?");
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
       $("#gif").css({ "background-image": "none" });
-
     } else if (state === 1 && thisUser.userName) {
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
@@ -189,8 +191,9 @@ const playerDisplay = () => {
     } else if (state === 3) {
       $("#opponent").text(thisUser.opponent);
       if (!otherUser.guessName) {
+        $("#header-2").empty();
         $(".rps-buttons").css({ display: "none" });
-        $("#header").text(`you chose ${thisUser.guessName}`);
+        $("#header-3").css({display: "block"}).text(`you chose ${thisUser.guessName}`);
       } else {
         $(".rps-buttons").css({ display: "block" });
       }
@@ -248,7 +251,7 @@ const commentDisplay = () => {
     .catch(err => console.log(err));
 };
 
-let time = moment().format("MMM D YYYY, h:mm:ss a");
+let time = "";
 
 // Clear database button
 $(document).on("click", "#clear", function(event) {
@@ -285,6 +288,8 @@ const clearDatabase = () => {
 // let clear;
 const autoClear = () => {
   // clear = rpsObj.timeCleared.timer;
+  time = moment().format("MMM D YYYY, h:mm:ss a");
+
   clearTimeout(timer);
   timer = setTimeout(clearDatabase, 180000); // possibly change to 180000 (3 minutes)
   // clearConsole = setTimeout(logClear, 300000);
@@ -345,7 +350,10 @@ const guessSubmit = (guessNumber, guessName) => {
     // $("#header").empty(); // to stop header flash at state 4
     db.ref()
       .update({ state: 4 })
-      .then(() => {rpsLogic(); backgroundDisplay(guessName);})
+      .then(() => {
+        rpsLogic();
+        backgroundDisplay(guessName);
+      })
       .catch(err => console.log(err));
   }
 };
@@ -403,8 +411,8 @@ const rpsLogic = () => {
 // Win Loss Comment Display
 const winDisplay = () => {
   $(".rps-buttons").css({ display: "none" });
-
-  $("#header").text(`You ${thisUser.outcome}`);
+  $(".header").empty();
+  $("#header-4").css({display: "block"}).text(`You ${thisUser.outcome}`);
   $("#player").html(
     `${thisUser.userName}<br>W: ${thisUser.wins} L: ${thisUser.losses}`
   );
@@ -413,7 +421,9 @@ const winDisplay = () => {
   );
   $("#reset").css({ display: "block" });
   buttonHide();
-  // if(thisUser.outcome === "lose") backgroundDisplay(otherUser.guessName);
+  (thisUser.outcome === "lose") ? backgroundDisplay(otherUser.guessName): backgroundDisplay(thisUser.guessName);
+
+  // if (thisUser.outcome === "lose") backgroundDisplay(otherUser.guessName);
 };
 
 // RESET BUTTON / PLAY AGAIN
@@ -422,7 +432,7 @@ $(document).on("click", "#reset", function() {
   db.ref().update({ state: 2 });
   autoClear();
   const reset = db.ref("player").orderByKey();
-  
+
   reset.once("value").then(snapshot => {
     snapshot.forEach(childSnapshot => {
       // key is the comment identifier
@@ -430,9 +440,9 @@ $(document).on("click", "#reset", function() {
       // childData will be the actual contents of the child
       const guessdata = childSnapshot.val();
       if (guessdata.guessName)
-      db.ref(`player/${key}`).update({ guessName: null, guess: null });
+        db.ref(`player/${key}`).update({ guessName: null, guess: null });
     });
-  })
+  });
 
   // pageRefresh();
   // .then(function() {
@@ -441,10 +451,10 @@ $(document).on("click", "#reset", function() {
 
 db.ref().on("child_changed", snapshot => {
   changedState = snapshot.val();
-  if (changedState === 0 ) {
+  if (changedState === 0) {
     sessionStorage.clear();
     location.reload();
-  } 
+  }
   // else if (changedState === 2) {
   //   location.reload(); // don't know why this worked, try moving to play again button
   // }
