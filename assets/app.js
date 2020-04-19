@@ -418,9 +418,9 @@ const winDisplay = () => {
 
 // RESET BUTTON / PLAY AGAIN
 $(document).on("click", "#reset", function() {
-  autoClear();
+  // autoClear(); removing this fixed reversion to state 2
   db.ref().update({ state: 2 });
-  //  $("#gif").css({"background-image": "none"});
+  autoClear();
   const reset = db.ref("player").orderByKey();
   
   reset.once("value").then(snapshot => {
@@ -433,6 +433,7 @@ $(document).on("click", "#reset", function() {
       db.ref(`player/${key}`).update({ guessName: null, guess: null });
     });
   })
+
   // pageRefresh();
   // .then(function() {
   //   $("#gif").css({ "background-image": "none" }); // maybe redundant, also in playerDisplay at state 2});
