@@ -36,6 +36,7 @@ const pageRefresh = () => {
   console.log(rpsObj, "at page refresh");
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
+    console.log(state);
     switch (state) {
       case 1:
         playerDisplay();
@@ -77,7 +78,7 @@ const defaultState = () => {
     .text("submit");
 };
 
-let state;
+let state; // moved to top
 let thisUser;
 let otherUser;
 let timer;
@@ -442,8 +443,9 @@ db.ref().on("child_changed", snapshot => {
   if (changedState === 0 ) {
     sessionStorage.clear();
     location.reload();
-  } else if (changedState === 2) {
-    location.reload(); // don't know why this worked, try moving to play again button
-  }
+  } 
+  // else if (changedState === 2) {
+  //   location.reload(); // don't know why this worked, try moving to play again button
+  // }
   pageRefresh();
 });
