@@ -70,7 +70,7 @@ const defaultState = () => {
   $("#opponent").empty();
   header.textContent = "rock paper scissors";
   header.classList.add("fade-in");
-  // unfade(header);
+  // fadeIn(header);
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
     .css({ display: "block" })
@@ -183,13 +183,10 @@ const playerDisplay = () => {
       // header.classList.toggle("fade-in");
       header.textContent = "";
       header2.textContent = "rock, paper, or scissors?";
-      // header2.classList.toggle("fade-in");
-
-      // unfade(header);
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
-      gif.style.backgroundImage = "none";
+      gif.innerHTML = "";
 
       // $("#gif").css({ "background-image": "none" });
     } else if (state === 1 && thisUser.userName) {
@@ -204,14 +201,14 @@ const playerDisplay = () => {
         $(".rps-buttons").css({ display: "none" });
         header2.textContent = "";
         header.textContent = `you chose ${thisUser.guessName}`;
-        unfade(header);
-        // unfade(backgroundDisplay(thisUser.guessName))
+        fadeIn(header);
+        // fadeIn(backgroundDisplay(thisUser.guessName))
         // backgroundDisplay(thisUser.guessName);
-        // unfade(backgroundDisplay);
+        // fadeIn(backgroundDisplay);
       } else {
         $(".rps-buttons").css({ display: "block" });
         header2.textContent = "rock, paper, or scissors?";
-        unfade(header2);
+        fadeIn(header2);
       }
     }
     buttonHide();
@@ -351,7 +348,7 @@ const backgroundDisplay = choice => {
   }
   // return gif;
   // $("#gif").fadeIn();
-  // unfade(gif);
+  // fadeIn(gif);
   // $("#gif").css({ display: "block" });
 };
 
@@ -438,7 +435,7 @@ const winDisplay = () => {
   $(".rps-buttons").css({ display: "none" });
   header2.textContent = "";
   header.textContent = `You ${thisUser.outcome}`;
-  unfade(header);
+  fadeIn(header);
   header2.classList.remove("fade-in");
   header.classList.remove("fade-in");
   $("#player").html(
@@ -450,15 +447,20 @@ const winDisplay = () => {
   $("#reset").css({ display: "block" });
   buttonHide();
   const img = document.createElement("img");
+  img.src = thisUser.dbGif;
   const gifDiv = document.getElementById("gif");
   if (thisUser.outcome === "lose") {
-    console.log("lose");
-    img.src = otherUser.dbGif;
     gifDiv.appendChild(img);
+    fadeOutAndCallback(img,
+      function(){
+        img.src = otherUser.dbGif;
+        fadeIn(img);
+      }
+    );
     // backgroundDisplay(otherUser.guessName);
   } else {
-    img.src = thisUser.dbGif;
     gifDiv.appendChild(img);
+    fadeIn(img);
     // backgroundDisplay(thisUser.guessName);
   }
 
@@ -500,8 +502,8 @@ db.ref().on("child_changed", snapshot => {
   }
 });
 
-function unfade(element) {
-  console.log("unfade");
+function fadeIn(element) {
+  console.log("fadeIn");
   var op = 0.1; // initial opacity
   element.style.display = "block";
   var fadetimer = setInterval(function() {
@@ -511,16 +513,16 @@ function unfade(element) {
     element.style.opacity = op;
     // element.style.filter = "alpha(opacity=" + op * 100 + ")";
     op += 0.1;
-  }, 10);
+  }, 50);
 }
 
 // Not used
 
 function fadeOutAndCallback(image, callback) {
   var opacity = 1;
-  var timer = setInterval(function() {
+  var fadeOutTimer = setInterval(function() {
     if (opacity < 0.1) {
-      clearInterval(timer);
+      clearInterval(fadeOutTimer);
       image.style.opacity = 0;
       callback(); //this executes the callback function!
     }
