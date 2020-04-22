@@ -19,6 +19,9 @@ const db = firebase.database();
 
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
+
+const header = document.getElementById("header");
+const header2 = document.getElementById("header-2");
 // let clear;
 // let clearConsole;
 const dbDefault = {
@@ -33,10 +36,10 @@ const dbDefault = {
 // console.log(moment().format("MMM D YYYY, h:mm a"));
 
 const pageRefresh = () => {
-  console.log(rpsObj, "at page refresh");
+  // console.log(rpsObj, "at page refresh");
   db.ref().once("value", snapshot => {
     state = snapshot.val().state;
-    console.log(state);
+    // console.log(state);
     switch (state) {
       case 1:
         playerDisplay();
@@ -65,7 +68,9 @@ window.onload = pageRefresh;
 
 const defaultState = () => {
   $("#opponent").empty();
-  $("#header-1").css({display: "block"}).text("rock paper scissors");
+  header.textContent = "rock paper scissors";
+  header.classList.add("fade-in");
+  // unfade(header);
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
     .css({ display: "block" })
@@ -175,15 +180,20 @@ const playerDisplay = () => {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
-      $(".header").empty();
-      // $("#header").text("Rock, Paper, or Scissors?");
-      // $("#header").fadeIn("slow");
-      $("#header-2").css({display: "block"}).text("rock, paper, or scissors?");
+      // header.classList.toggle("fade-in");
+      header.textContent = "";
+      header2.textContent = "rock, paper, or scissors?";
+      // header2.classList.toggle("fade-in");
+
+      // unfade(header);
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
-      $("#gif").css({ "background-image": "none" });
+      gif.style.backgroundImage = "none";
+
+      // $("#gif").css({ "background-image": "none" });
     } else if (state === 1 && thisUser.userName) {
+      // header2.textContent = "rock paper scissors";
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
     } else if (state === 1 && !thisUser.opponent) {
@@ -191,11 +201,17 @@ const playerDisplay = () => {
     } else if (state === 3) {
       $("#opponent").text(thisUser.opponent);
       if (!otherUser.guessName) {
-        $("#header-2").empty();
         $(".rps-buttons").css({ display: "none" });
-        $("#header-3").css({display: "block"}).text(`you chose ${thisUser.guessName}`);
+        header2.textContent = "";
+        header.textContent = `you chose ${thisUser.guessName}`;
+        unfade(header);
+        // unfade(backgroundDisplay(thisUser.guessName))
+        // backgroundDisplay(thisUser.guessName);
+        // unfade(backgroundDisplay);
       } else {
         $(".rps-buttons").css({ display: "block" });
+        header2.textContent = "rock, paper, or scissors?";
+        unfade(header2);
       }
     }
     buttonHide();
@@ -309,10 +325,10 @@ $(document).on("click", ".rps-buttons", function(event) {
   if (guess === "paper") dbGuess = 1;
   if (guess === "scissors") dbGuess = 2;
   guessSubmit(dbGuess, guess);
-  // backgroundDisplay(guess);
   $(".rps-buttons").css({ display: "none" }); // redundant?
 });
 
+const gif = document.getElementById("gif");
 const backgroundDisplay = choice => {
   switch (choice) {
     case "rock":
@@ -331,12 +347,21 @@ const backgroundDisplay = choice => {
       $("#gif").css({
         "background-image": `url("https://media.giphy.com/media/M7ZLjbUplnd3q/giphy.gif")`
       });
+    // https://media.giphy.com/media/xTiTnrZCjg8IsJ34be/giphy.gif
   }
+  // return gif;
+  // $("#gif").fadeIn();
+  // unfade(gif);
+  // $("#gif").css({ display: "block" });
 };
 
 const guessSubmit = (guessNumber, guessName) => {
+  let dbGif = [
+    "https://media.giphy.com/media/I1SLS2om702u4/giphy-downsized.gif", "https://media.giphy.com/media/VTxmwaCEwSlZm/giphy.gif", "https://media.giphy.com/media/M7ZLjbUplnd3q/giphy.gif"
+  ];
+
   db.ref(`player/${persist}`)
-    .update({ guess: guessNumber, guessName: guessName })
+    .update({ guess: guessNumber, guessName: guessName, dbGif: dbGif[guessNumber] }) 
     .then(() => {
       pageRefresh;
     })
@@ -344,7 +369,7 @@ const guessSubmit = (guessNumber, guessName) => {
 
   if (state === 2) {
     db.ref().update({ state: 3 });
-    backgroundDisplay(guessName);
+    // backgroundDisplay(guessName);
   } else if (state === 3) {
     // } else { // check if can be made ternary
     // $("#header").empty(); // to stop header flash at state 4
@@ -352,7 +377,7 @@ const guessSubmit = (guessNumber, guessName) => {
       .update({ state: 4 })
       .then(() => {
         rpsLogic();
-        backgroundDisplay(guessName);
+        // backgroundDisplay(guessName);
       })
       .catch(err => console.log(err));
   }
@@ -411,8 +436,11 @@ const rpsLogic = () => {
 // Win Loss Comment Display
 const winDisplay = () => {
   $(".rps-buttons").css({ display: "none" });
-  $(".header").empty();
-  $("#header-4").css({display: "block"}).text(`You ${thisUser.outcome}`);
+  header2.textContent = "";
+  header.textContent = `You ${thisUser.outcome}`;
+  unfade(header);
+  header2.classList.remove("fade-in");
+  header.classList.remove("fade-in");
   $("#player").html(
     `${thisUser.userName}<br>W: ${thisUser.wins} L: ${thisUser.losses}`
   );
@@ -421,7 +449,18 @@ const winDisplay = () => {
   );
   $("#reset").css({ display: "block" });
   buttonHide();
-  (thisUser.outcome === "lose") ? backgroundDisplay(otherUser.guessName): backgroundDisplay(thisUser.guessName);
+  const img = document.createElement("img");
+  const gifDiv = document.getElementById("gif");
+  if (thisUser.outcome === "lose") {
+    console.log("lose");
+    img.src = otherUser.dbGif;
+    gifDiv.appendChild(img);
+    // backgroundDisplay(otherUser.guessName);
+  } else {
+    img.src = thisUser.dbGif;
+    gifDiv.appendChild(img);
+    // backgroundDisplay(thisUser.guessName);
+  }
 
   // if (thisUser.outcome === "lose") backgroundDisplay(otherUser.guessName);
 };
@@ -444,9 +483,7 @@ $(document).on("click", "#reset", function() {
     });
   });
 
-  // pageRefresh();
-  // .then(function() {
-  //   $("#gif").css({ "background-image": "none" }); // maybe redundant, also in playerDisplay at state 2});
+  $(".header").css({ display: "none" }); //?
 });
 
 db.ref().on("child_changed", snapshot => {
@@ -458,5 +495,47 @@ db.ref().on("child_changed", snapshot => {
   // else if (changedState === 2) {
   //   location.reload(); // don't know why this worked, try moving to play again button
   // }
-  pageRefresh();
+  else {
+    pageRefresh();
+  }
 });
+
+function unfade(element) {
+  console.log("unfade");
+  var op = 0.1; // initial opacity
+  element.style.display = "block";
+  var fadetimer = setInterval(function() {
+    if (op > 0.99) {
+      clearInterval(fadetimer);
+    }
+    element.style.opacity = op;
+    // element.style.filter = "alpha(opacity=" + op * 100 + ")";
+    op += 0.1;
+  }, 10);
+}
+
+// Not used
+
+function fadeOutAndCallback(image, callback) {
+  var opacity = 1;
+  var timer = setInterval(function() {
+    if (opacity < 0.1) {
+      clearInterval(timer);
+      image.style.opacity = 0;
+      callback(); //this executes the callback function!
+    }
+    image.style.opacity = opacity;
+    opacity -= 0.1;
+  }, 50);
+}
+
+function fadeOut(element) {
+  var op = 1; // initial opacity
+  var timer = setInterval(function() {
+    if (op <= 0.1) {
+      clearInterval(timer);
+    }
+    element.style.opacity = op;
+    op -= 0.1;
+  }, 50);
+}
