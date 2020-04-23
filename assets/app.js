@@ -34,37 +34,6 @@ const dbDefault = {
   losses: 0
 };
 
-const pageRefresh = () => {
-  // console.log(rpsObj, "at page refresh");
-  db.ref().once("value", snapshot => {
-    state = snapshot.val().state;
-    // console.log(state);
-    switch (state) {
-      case 1:
-        playerDisplay();
-        break;
-      case 2:
-        playerDisplay();
-        // setTimeout(playerDisplay(), 100); // why is the timeout here?
-        commentDisplay();
-        break;
-      case 3:
-        playerDisplay(); // 125
-        commentDisplay();
-        break;
-      case 4:
-        // winDisplay();
-        setTimeout(winDisplay, 200); // 342
-        commentDisplay();
-        break;
-      default:
-        defaultState();
-    }
-  });
-};
-
-window.onload = pageRefresh;
-
 const defaultState = () => {
   $("#opponent").empty();
   header.textContent = "rock paper scissors";
@@ -92,9 +61,10 @@ db.ref().on("value", snapshot => {
   rpsObj = snapshot.val();
   state = rpsObj.state;
   thisUser = rpsObj.player[persist];
+  if (!state) defaultState();
   if (state >= 1) timer = rpsObj.timeCleared.timer;
   if (state > 2) otherUser = rpsObj.player[thisUser.oppoKey];
-  if (state === 1 || state === 2) playerDisplay();
+  if (state > 0 && state < 4) playerDisplay();
   if (state === 3) gifDisplay();
   if (state === 4) winDisplay();
 });
@@ -325,33 +295,6 @@ $(document).on("click", ".rps-buttons", function(event) {
   $(".rps-buttons").css({ display: "none" }); // redundant?
 });
 
-// const gif = document.getElementById("gif");
-const backgroundDisplay = choice => {
-  switch (choice) {
-    case "rock":
-      $("#gif").css({
-        "background-image": `url("https://media.giphy.com/media/sSfxdaLf3tive/giphy.gif")`
-      });
-      //https://media.giphy.com/media/I1SLS2om702u4/giphy-downsized.gif
-      // https://media.giphy.com/media/9Dgf4pFMzSrTrE4Urj/giphy.gif
-      break;
-    case "paper":
-      $("#gif").css({
-        "background-image": `url("https://media.giphy.com/media/VTxmwaCEwSlZm/giphy.gif")`
-      });
-      break;
-    default:
-      $("#gif").css({
-        "background-image": `url("https://media.giphy.com/media/M7ZLjbUplnd3q/giphy.gif")`
-      });
-    // https://media.giphy.com/media/xTiTnrZCjg8IsJ34be/giphy.gif
-  }
-  // return gif;
-  // $("#gif").fadeIn();
-  // fadeIn(gif);
-  // $("#gif").css({ display: "block" });
-};
-
 const guessSubmit = (guessNumber, guessName) => {
   let dbGif = [
     "https://media.giphy.com/media/I1SLS2om702u4/giphy-downsized.gif",
@@ -365,13 +308,10 @@ const guessSubmit = (guessNumber, guessName) => {
       guessName: guessName,
       dbGif: dbGif[guessNumber]
     })
-    .then(() => {
-      pageRefresh;
-    })
     .catch(err => console.log(err));
 
   if (state === 2) {
-    db.ref().update({ state: 3 });
+    db.ref().update({ state: 3 }).catch(err => console.log(err));
     // backgroundDisplay(guessName);
   } else if (state === 3) {
     // } else { // check if can be made ternary
@@ -380,7 +320,6 @@ const guessSubmit = (guessNumber, guessName) => {
       .update({ state: 4 })
       .then(() => {
         rpsLogic();
-        // backgroundDisplay(guessName);
       })
       .catch(err => console.log(err));
   }
@@ -453,7 +392,6 @@ const winDisplay = () => {
   $("#reset").css({ display: "block" });
   buttonHide();
   gifDisplay();
-  // if (thisUser.outcome === "lose") backgroundDisplay(otherUser.guessName);
 };
 
 const gifDisplay = () => {
@@ -468,14 +406,7 @@ const gifDisplay = () => {
       img.src = otherUser.dbGif;
       fadeIn(img);
     });
-    // backgroundDisplay(otherUser.guessName);
   }
-  // else if (outcome === "win") {
-  //   // gifDiv.innerHTML = "";
-  //   console.log("win");
-  //   // img.style.opacity = 1;
-  //   // gifDiv.appendChild(img);
-  // }
   else {
     gifDiv.innerHTML = "";
     gifDiv.appendChild(img);
@@ -498,6 +429,7 @@ $(document).on("click", "#reset", function() {
       const guessdata = childSnapshot.val();
       if (guessdata.guessName)
         db.ref(`player/${key}`).update({
+          dbGif: "",
           guessName: null,
           guess: null,
           outcome: ""
@@ -514,26 +446,16 @@ db.ref().on("child_changed", snapshot => {
   // let comment = snapshot.val().comment;
   // console.log(rpsObj.comment);
   // console.log(comment);
-  console.log(changedState);
+  // console.log(changedState);
   if (changedState === 0) {
     sessionStorage.clear();
     location.reload();
   }
-  // else if (changedState === 2) {
-  //   playerDisplay();
-  // }
-  // else if (changedState > 0) {
-  //   pageRefresh();
-  // }
 });
 
-db.ref("comment").on("value", snapshot => {
-  console.log(snapshot.val(), "at comment call");
-  commentDisplay();
-});
+db.ref("comment").on("value", () => commentDisplay());
 
-db.ref("player")
-  .on("value", () => playerDisplay());
+db.ref("player").on("value", () => playerDisplay());
 
 function fadeIn(element) {
   // console.log("fadeIn");
