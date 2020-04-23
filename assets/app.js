@@ -33,7 +33,6 @@ const dbDefault = {
   losses: 0
 };
 
-
 const pageRefresh = () => {
   // console.log(rpsObj, "at page refresh");
   db.ref().once("value", snapshot => {
@@ -94,6 +93,7 @@ db.ref().on("value", snapshot => {
   thisUser = rpsObj.player[persist];
   if (state >= 1) timer = rpsObj.timeCleared.timer;
   if (state > 2) otherUser = rpsObj.player[thisUser.oppoKey];
+  if (state === 2) playerDisplay();
 });
 
 // Enter user name or comment button
@@ -231,7 +231,7 @@ const commentSave = () => {
     ? db
         .ref("comment")
         .push({ comment: `${comment}`, commenter: persist })
-        .then(() => pageRefresh())
+        .then(() => $("#text-input").val(""))
         .catch(err => console.log(err))
     : $("#text-input").attr({ placeholder: "please type a comment you dope" });
 };
@@ -507,18 +507,18 @@ $(document).on("click", "#reset", function() {
 
 db.ref().on("child_changed", snapshot => {
   changedState = snapshot.val();
-  // let comment = snapshot.val().comment;  
+  // let comment = snapshot.val().comment;
   // console.log(rpsObj.comment);
   // console.log(comment);
-  // console.log(changedState);
+  console.log(changedState);
   if (changedState === 0) {
     sessionStorage.clear();
     location.reload();
   }
   // else if (changedState === 2) {
-  //   location.reload(); // don't know why this worked, try moving to play again button
+  //   playerDisplay();
   // }
-  else if (changedState >= 1) {
+  else if (changedState > 0) {
     pageRefresh();
   }
 });
@@ -526,7 +526,10 @@ db.ref().on("child_changed", snapshot => {
 db.ref("comment").on("value", snapshot => {
   console.log(snapshot.val(), "at comment call");
   commentDisplay();
-})
+});
+
+db.ref("player")
+  .on("value", () => playerDisplay());
 
 function fadeIn(element) {
   // console.log("fadeIn");
