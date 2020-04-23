@@ -25,6 +25,7 @@ const header2 = document.getElementById("header-2");
 // let clear;
 // let clearConsole;
 const dbDefault = {
+  dbGif: "",
   userName: "",
   opponent: "",
   guess: null,
@@ -93,7 +94,9 @@ db.ref().on("value", snapshot => {
   thisUser = rpsObj.player[persist];
   if (state >= 1) timer = rpsObj.timeCleared.timer;
   if (state > 2) otherUser = rpsObj.player[thisUser.oppoKey];
-  if (state === 2) playerDisplay();
+  if (state === 1 || state === 2) playerDisplay();
+  if (state === 3) gifDisplay();
+  if (state === 4) winDisplay();
 });
 
 // Enter user name or comment button
@@ -505,6 +508,7 @@ $(document).on("click", "#reset", function() {
   $(".header").css({ display: "none" }); //?
 });
 
+// IS CHILD CHANGED NECESSARY?
 db.ref().on("child_changed", snapshot => {
   changedState = snapshot.val();
   // let comment = snapshot.val().comment;
@@ -518,9 +522,9 @@ db.ref().on("child_changed", snapshot => {
   // else if (changedState === 2) {
   //   playerDisplay();
   // }
-  else if (changedState > 0) {
-    pageRefresh();
-  }
+  // else if (changedState > 0) {
+  //   pageRefresh();
+  // }
 });
 
 db.ref("comment").on("value", snapshot => {
