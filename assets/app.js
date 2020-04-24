@@ -20,8 +20,8 @@ const db = firebase.database();
 let rpsObj = {};
 let persist = sessionStorage.getItem(player);
 
-const header = document.getElementById("header");
-const header2 = document.getElementById("header-2");
+let header = document.getElementById("header");
+let header2 = document.getElementById("header-2");
 // let clear;
 // let clearConsole;
 const dbDefault = {
@@ -37,8 +37,8 @@ const dbDefault = {
 const defaultState = () => {
   $("#opponent").empty();
   header.textContent = "rock paper scissors";
-  header.classList.add("fade-in");
-  // fadeIn(header);
+  // header.classList.add("fade-in");
+  fadeIn(header);
   $("#player").html("Welcome!<br>Add user name?");
   $("#no-button")
     .css({ display: "block" })
@@ -153,8 +153,12 @@ const playerDisplay = () => {
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
       // header.classList.toggle("fade-in");
-      header.textContent = "";
+      // header.textContent = "";
       header2.textContent = "rock, paper, or scissors?";
+      fadeOutAndCallback(header, () =>{
+        header = header2;
+        fadeIn(header);
+      })
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
@@ -316,12 +320,13 @@ const guessSubmit = (guessNumber, guessName) => {
   } else if (state === 3) {
     // } else { // check if can be made ternary
     // $("#header").empty(); // to stop header flash at state 4
-    db.ref()
-      .update({ state: 4 })
-      .then(() => {
-        rpsLogic();
-      })
-      .catch(err => console.log(err));
+    rpsLogic()
+    // db.ref()
+    //   .update({ state: 4 })
+    //   .then(() => {
+    //     rpsLogic();
+    //   })
+    //   .catch(err => console.log(err));
   }
 };
 

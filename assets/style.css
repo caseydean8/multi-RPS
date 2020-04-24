@@ -58,13 +58,10 @@ body {
   /* -ms-animation: fadein 2s; Internet Explorer */
   /* -o-animation: fadein 2s; Opera < 12.1 */
   /* animation: fadein 2s; */
-  opacity: 1;
+  opacity: 0;
   transition: opacity 1s;
 }
 
-#header.fade-in, #header-2.fade-in {
-  opacity: 1;
-}
 
 /* #header-2 {
   display: block; 
