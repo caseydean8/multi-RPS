@@ -11,9 +11,6 @@ var firebaseConfig = {
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
-// firebase.analytics();
-// Enable logging
-// firebase.database.enableLogging(true);
 
 const db = firebase.database();
 
@@ -64,6 +61,7 @@ const dbDefault = {
   losses: 0
 };
 
+// Set session storage
 const assignStorage = () => {
   db.ref("player")
     .push(dbDefault)
@@ -77,27 +75,21 @@ const assignStorage = () => {
 
 let header = document.getElementById("header");
 let header2 = document.getElementById("header-2");
-const playAgainBtn = document.getElementById("reset");
 
 const defaultState = () => {
   $("#opponent").empty();
   header.textContent = "rock paper scissors";
   fadeIn(header, 50);
   $("#player").html("Welcome!<br>Add user name?");
-  // $("#no-button")
-  //   .css({ display: "block" })
-  //   .text("no thanks");
   $("#text-input")
     .attr({ placeholder: "add username" })
     .css({ display: "block" });
   $("#username-button")
     .css({ display: "block" })
     .text("submit");
-  // playAgainBtn.style.display = "none";
-  // $("#reset").css({ display: "none" });
 };
 
-// Send Player object to database Step 1.1
+// Send Player object to database
 const playerCreate = () => {
   const userAddedName = $("#text-input")
     .val()
@@ -128,11 +120,11 @@ const otherPlayerCreate = username => {
       snapshot.forEach(snapChild => {
         const key = snapChild.key;
         if (key != persist) {
-          otherUser = rpsObj.player[key]; // might be redundant
           db.ref(`player/${key}`).update({
             opponent: username,
             oppoKey: persist
           });
+          otherUser = rpsObj.player[key];
           db.ref(`player/${persist}`).update({
             opponent: otherUser.userName,
             oppoKey: key
@@ -142,6 +134,8 @@ const otherPlayerCreate = username => {
     })
     .catch(err => console.log(err));
 };
+
+const playAgainBtn = document.getElementById("reset");
 
 const playerDisplay = () => {
   if (thisUser) {
@@ -222,14 +216,13 @@ const commentDisplay = () => {
   query
     .once("value")
     .then(snapshot => {
-      $("#comment-out").empty(); // must be on this line to work properly
+      $("#comment-out").empty();
       snapshot.forEach(childSnapshot => {
-        // key is the comment identifier
-        // const key = childSnapshot.key;
-        // childData will be the actual contents of the child
         const commentTag = $("<div>").addClass("comment");
+        // childData will be the actual contents of the child
         const childData = childSnapshot.val().comment;
         const textAlign = childSnapshot.val().commenter;
+        // set user comments to appear on right side, opponent comments to appear on left side
         textAlign === persist
           ? $(commentTag).addClass("my-comment")
           : $(commentTag).addClass("oppo-comment");
@@ -249,12 +242,10 @@ $(document).on("click", "#clear", function(event) {
     .update({ buttonClear: time })
     .catch(err => console.log(err));
   clearDatabase();
-  // pageRefresh(); // probably redundant
 });
 
 // CLEAR DATABASE
 const clearDatabase = () => {
-  console.log("clear database happened");
   sessionStorage.clear();
 
   db.ref()
@@ -262,32 +253,23 @@ const clearDatabase = () => {
       state: 0,
       comment: "",
       player: ""
-      // timeCleared: { clearData: time }
     })
-    .then(function() {
-      location.reload();
-    })
-    .catch(function(error) {
-      console.log("Remove failed: " + error.message);
-    });
+    .then(() => location.reload())
+    .catch(error => console.log("Remove failed: " + error.message));
 
   time = moment().format("MMM D YYYY, h:mm:ss a");
 
   db.ref("timeCleared").update({ lastTimeCleared: `Cleared at ${time}` });
   location.reload;
 };
-// let clear;
+
 const autoClear = () => {
-  // clear = rpsObj.timeCleared.timer;
   time = moment().format("MMM D YYYY, h:mm:ss a");
 
   clearTimeout(timer);
-  timer = setTimeout(clearDatabase, 180000); // possibly change to 180000 (3 minutes)
-  // clearConsole = setTimeout(logClear, 300000);
+  timer = setTimeout(clearDatabase, 180000);
   const autoClearTime = `autoClear set at ${time}`;
-  // console.log(timer, autoClearTime);
   db.ref("timeCleared").update({ autoClearTime: autoClearTime, timer: timer });
-  // console.log(clear, clearConsole, "at autoClear");
 };
 
 // Rock Paper Scissors Button
@@ -305,9 +287,9 @@ $(document).on("click", ".rps-buttons", function(event) {
 
 const guessSubmit = (guessNumber, guessName) => {
   let dbGif = [
-    "https://media.giphy.com/media/I1SLS2om702u4/giphy-downsized.gif",
-    "https://media.giphy.com/media/VTxmwaCEwSlZm/giphy.gif",
-    "https://media.giphy.com/media/M7ZLjbUplnd3q/giphy.gif"
+    "/assets/gifs/rock.gif",
+    "/assets/gifs/paper.gif",
+    "/assets/gifs/scissors.gif"
   ];
 
   db.ref(`player/${persist}`)
@@ -318,22 +300,12 @@ const guessSubmit = (guessNumber, guessName) => {
     })
     .catch(err => console.log(err));
 
-  if (state === 2) {
-    db.ref()
-      .update({ state: 3 })
-      .catch(err => console.log(err));
-    // backgroundDisplay(guessName);
-  } else if (state === 3) {
-    // } else { // check if can be made ternary
-    // $("#header").empty(); // to stop header flash at state 4
-    rpsLogic();
-    // db.ref()
-    //   .update({ state: 4 })
-    //   .then(() => {
-    //     rpsLogic();
-    //   })
-    //   .catch(err => console.log(err));
-  }
+  state === 2
+    ? db
+        .ref()
+        .update({ state: 3 })
+        .catch(err => console.log(err))
+    : rpsLogic();
 };
 
 // Main Game Logic
@@ -401,9 +373,6 @@ const winDisplay = () => {
   $("#opponent").html(
     `${otherUser.userName}<br>W: ${otherUser.wins} L: ${otherUser.losses}`
   );
-
-  // playAgainBtn.style.display = "block";
-  $("gif").append(playAgainBtn);
   fadeIn(playAgainBtn, 150);
   buttonHide();
   gifDisplay();
@@ -421,23 +390,15 @@ const gifDisplay = () => {
       img.src = otherUser.dbGif;
       fadeIn(img, 100);
     });
-    // console.log(playAgainBtn);
-    // // $("#reset").css({ display: "block" });
-    // playAgainBtn.style.display = "block";
-    // $("gif").append(playAgainBtn);
   } else {
     gifDiv.innerHTML = "";
     gifDiv.appendChild(img);
     fadeIn(img, 100);
-    // const playAgainBtn = $("#reset");
-
-    // fadeIn(playAgainBtn, 50);
   }
 };
 
 // RESET BUTTON / PLAY AGAIN
 $(document).on("click", "#reset", function() {
-  // autoClear(); removing this fixed reversion to state 2
   db.ref().update({ state: 2 });
   autoClear();
   const reset = db.ref("player").orderByKey();
@@ -461,13 +422,8 @@ $(document).on("click", "#reset", function() {
   header.innerHTML = "";
 });
 
-// IS CHILD CHANGED NECESSARY?
 db.ref().on("child_changed", snapshot => {
   changedState = snapshot.val();
-  // let comment = snapshot.val().comment;
-  // console.log(rpsObj.comment);
-  // console.log(comment);
-  // console.log(changedState);
   if (changedState === 0) {
     sessionStorage.clear();
     location.reload();
@@ -478,40 +434,39 @@ db.ref("comment").on("value", () => commentDisplay());
 
 db.ref("player").on("value", () => playerDisplay());
 
-function fadeIn(element, millisecs) {
-  // console.log("fadeIn");
-  var op = 0.1; // initial opacity
+const fadeIn = (element, millisecs) => {
+  let op = 0.1; // initial opacity
   element.style.display = "block";
-  var fadetimer = setInterval(function() {
+  const fadetimer = setInterval(() => {
     if (op >= 0.99) {
       clearInterval(fadetimer);
     }
     element.style.opacity = op;
     op += 0.1;
   }, millisecs);
-}
+};
 
-function fadeOutAndCallback(image, millisecs, callback) {
-  var opacity = 1;
-  var fadeOutTimer = setInterval(function() {
+const fadeOutAndCallback = (image, millisecs, callback) => {
+  let opacity = 1;
+  const fadeOutTimer = setInterval(() => {
     if (opacity < 0.1) {
       clearInterval(fadeOutTimer);
       image.style.opacity = 0;
-      callback(); //this executes the callback function!
+      callback(); //executes the callback function to prevent flickering
     }
     image.style.opacity = opacity;
     opacity -= 0.1;
   }, millisecs);
-}
-// Not used
+};
 
-function fadeOut(element) {
-  var op = 1; // initial opacity
-  var timer = setInterval(function() {
+// Not used
+const fadeOut = element => {
+  let op = 1; // initial opacity
+  const timer = setInterval(() => {
     if (op <= 0.1) {
       clearInterval(timer);
     }
     element.style.opacity = op;
     op -= 0.1;
   }, 50);
-}
+};
