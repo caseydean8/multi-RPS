@@ -286,9 +286,9 @@ $(document).on("click", ".rps-buttons", function(event) {
 
 const guessSubmit = (guessNumber, guessName) => {
   let dbGif = [
-    "/assets/gifs/rock.gif",
-    "/assets/gifs/paper.gif",
-    "/assets/gifs/scissors.gif"
+    "assets/gifs/rock.gif",
+    "assets/gifs/paper.gif",
+    "assets/gifs/scissors.gif"
   ];
 
   db.ref(`player/${persist}`)
