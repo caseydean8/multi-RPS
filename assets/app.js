@@ -1,4 +1,4 @@
-var firebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyDolW-LxcVMBEdkPpXoIS_SjkZKtlufnxk",
   authDomain: "rps-multi-b502c.firebaseapp.com",
   databaseURL: "https://rps-multi-b502c.firebaseio.com",
@@ -199,14 +199,13 @@ const commentSave = () => {
   const comment = $("#text-input")
     .val()
     .trim();
-
-  comment
-    ? db
+  comment.length === 0
+    ? $("#text-input").attr({ placeholder: "please type a comment you dope" })
+    : db
         .ref("comment")
         .push({ comment: `${comment}`, commenter: persist })
         .then(() => $("#text-input").val(""))
-        .catch(err => console.log(err))
-    : $("#text-input").attr({ placeholder: "please type a comment you dope" });
+        .catch(err => console.log(err));
 };
 
 // Comment display
@@ -457,16 +456,4 @@ const fadeOutAndCallback = (image, millisecs, callback) => {
     image.style.opacity = opacity;
     opacity -= 0.1;
   }, millisecs);
-};
-
-// Not used
-const fadeOut = element => {
-  let op = 1; // initial opacity
-  const timer = setInterval(() => {
-    if (op <= 0.1) {
-      clearInterval(timer);
-    }
-    element.style.opacity = op;
-    op -= 0.1;
-  }, 50);
 };
