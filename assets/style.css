@@ -21,7 +21,9 @@ body {
 .parent {
   display: grid;
   font-family: main;
-  font-size: 2.5rem;
+  font-family: "Montserrat", sans-serif;
+
+  font-size: 1.5rem;
   /* background-size: 100vw; */
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: 1fr 0.75fr repeat(2, 0.5fr) 5fr;
@@ -37,14 +39,15 @@ body {
     "comment-in comment-in submit"
     "rock paper scissors"
     "comment-out comment-out comment-out";
-    -webkit-animation: fadein 3s; /* Safari, Chrome and Opera > 12.1 */
+  -webkit-animation: fadein 3s; /* Safari, Chrome and Opera > 12.1 */
   -moz-animation: fadein 3s; /* Firefox < 16 */
   -ms-animation: fadein 3s; /* Internet Explorer */
   -o-animation: fadein 3s; /* Opera < 12.1 */
   animation: fadein 3s;
 }
 
-#header, #header-2 {
+#header,
+#header-2 {
   grid-area: 1 / 1 / 2 / 4;
   /* grid-area: header; */
   /* display: none; */
@@ -61,7 +64,6 @@ body {
   opacity: 0;
   transition: opacity 1s;
 }
-
 
 /* #header-2 {
   display: block; 
@@ -136,10 +138,6 @@ img {
   /* animation: fadein 2s; */
 }
 
-/* #gif.fade {
-  opacity: 0;
-} */
-
 #player {
   grid-area: player;
 }
@@ -176,8 +174,9 @@ img {
   /* min-width: 20%; */
 }
 #reset {
-  grid-area: paper;
   display: none;
+  margin-top: -19rem;
+  height: 2rem;
 }
 #clear {
   grid-area: clear;

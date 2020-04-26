@@ -18,40 +18,8 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 let rpsObj = {};
+let state;
 let persist = sessionStorage.getItem(player);
-
-let header = document.getElementById("header");
-let header2 = document.getElementById("header-2");
-// let clear;
-// let clearConsole;
-const dbDefault = {
-  dbGif: "",
-  userName: "",
-  opponent: "",
-  guess: null,
-  guessName: null,
-  wins: 0,
-  losses: 0
-};
-
-const defaultState = () => {
-  $("#opponent").empty();
-  header.textContent = "rock paper scissors";
-  // header.classList.add("fade-in");
-  fadeIn(header);
-  $("#player").html("Welcome!<br>Add user name?");
-  $("#no-button")
-    .css({ display: "block" })
-    .text("no thanks");
-  $("#text-input")
-    .attr({ placeholder: "add username" })
-    .css({ display: "block" });
-  $("#username-button")
-    .css({ display: "block" })
-    .text("submit");
-};
-
-let state; // moved to top
 let thisUser;
 let otherUser;
 let timer;
@@ -86,6 +54,16 @@ const gameSetup = () => {
   autoClear();
 };
 
+const dbDefault = {
+  dbGif: "",
+  userName: "",
+  opponent: "",
+  guess: null,
+  guessName: null,
+  wins: 0,
+  losses: 0
+};
+
 const assignStorage = () => {
   db.ref("player")
     .push(dbDefault)
@@ -95,6 +73,28 @@ const assignStorage = () => {
       persist = entry;
       sessionStorage.setItem(player, entry);
     });
+};
+
+let header = document.getElementById("header");
+let header2 = document.getElementById("header-2");
+const playAgainBtn = document.getElementById("reset");
+
+const defaultState = () => {
+  $("#opponent").empty();
+  header.textContent = "rock paper scissors";
+  fadeIn(header, 50);
+  $("#player").html("Welcome!<br>Add user name?");
+  // $("#no-button")
+  //   .css({ display: "block" })
+  //   .text("no thanks");
+  $("#text-input")
+    .attr({ placeholder: "add username" })
+    .css({ display: "block" });
+  $("#username-button")
+    .css({ display: "block" })
+    .text("submit");
+  // playAgainBtn.style.display = "none";
+  // $("#reset").css({ display: "none" });
 };
 
 // Send Player object to database Step 1.1
@@ -146,27 +146,30 @@ const otherPlayerCreate = username => {
 const playerDisplay = () => {
   if (thisUser) {
     $("#player").text(`${thisUser.userName}`);
-    $("#reset").css({ display: "none" });
 
     if (state === 2) {
       $("#text-input").css({ display: "none" });
       $("#vs").text("vs");
       $("#opponent").text(thisUser.opponent);
-      // header.classList.toggle("fade-in");
-      // header.textContent = "";
+      header.textContent = "";
       header2.textContent = "rock, paper, or scissors?";
-      fadeOutAndCallback(header, () =>{
-        header = header2;
-        fadeIn(header);
-      })
+      playAgainBtn.style.display = "none";
+      playAgainBtn.style.opacity = 0;
+
+      if (thisUser.outcome === undefined) {
+        fadeOutAndCallback(header, 50, () => {
+          header = header2;
+          fadeIn(header, 50);
+        });
+      } else if (thisUser.wins > 0 || thisUser.losses > 0) {
+        fadeIn(header2, 50);
+      }
+
       $(".rps-buttons, #text-input, #username-button").css({
         display: "block"
       });
       gif.innerHTML = "";
-
-      // $("#gif").css({ "background-image": "none" });
     } else if (state === 1 && thisUser.userName) {
-      // header2.textContent = "rock paper scissors";
       $("#opponent").text(`awaiting 2nd player`);
       $("#text-input, #username-button").css({ display: "none" });
     } else if (state === 1 && !thisUser.opponent) {
@@ -177,12 +180,12 @@ const playerDisplay = () => {
         $(".rps-buttons").css({ display: "none" });
         header2.textContent = "";
         header.textContent = `you chose ${thisUser.guessName}`;
-        fadeIn(header);
+        fadeIn(header, 50);
         gifDisplay();
       } else {
         $(".rps-buttons").css({ display: "block" });
         header2.textContent = "rock, paper, or scissors?";
-        fadeIn(header2);
+        fadeIn(header2, 50);
       }
     }
     buttonHide();
@@ -192,7 +195,6 @@ const playerDisplay = () => {
 };
 
 const buttonHide = () => {
-  $("#no-button").css({ display: "none" });
   $("#username-button").text("comment");
   $("#text-input")
     .val("")
@@ -243,9 +245,11 @@ let time = "";
 // Clear database button
 $(document).on("click", "#clear", function(event) {
   event.preventDefault();
-  db.ref("timeCleared").update({ buttonClear: time });
+  db.ref("timeCleared")
+    .update({ buttonClear: time })
+    .catch(err => console.log(err));
   clearDatabase();
-  pageRefresh(); // probably redundant
+  // pageRefresh(); // probably redundant
 });
 
 // CLEAR DATABASE
@@ -315,12 +319,14 @@ const guessSubmit = (guessNumber, guessName) => {
     .catch(err => console.log(err));
 
   if (state === 2) {
-    db.ref().update({ state: 3 }).catch(err => console.log(err));
+    db.ref()
+      .update({ state: 3 })
+      .catch(err => console.log(err));
     // backgroundDisplay(guessName);
   } else if (state === 3) {
     // } else { // check if can be made ternary
     // $("#header").empty(); // to stop header flash at state 4
-    rpsLogic()
+    rpsLogic();
     // db.ref()
     //   .update({ state: 4 })
     //   .then(() => {
@@ -378,6 +384,7 @@ const rpsLogic = () => {
     .catch(err => console.log(err));
 
   db.ref().update({ state: 4 });
+  playAgainBtn.style.display = "block";
 };
 
 // Win Loss Comment Display
@@ -394,7 +401,10 @@ const winDisplay = () => {
   $("#opponent").html(
     `${otherUser.userName}<br>W: ${otherUser.wins} L: ${otherUser.losses}`
   );
-  $("#reset").css({ display: "block" });
+
+  // playAgainBtn.style.display = "block";
+  $("gif").append(playAgainBtn);
+  fadeIn(playAgainBtn, 150);
   buttonHide();
   gifDisplay();
 };
@@ -407,15 +417,21 @@ const gifDisplay = () => {
   if (outcome === "lose") {
     gifDiv.innerHTML = "";
     gifDiv.appendChild(img);
-    fadeOutAndCallback(img, function() {
+    fadeOutAndCallback(img, 50, function() {
       img.src = otherUser.dbGif;
-      fadeIn(img);
+      fadeIn(img, 100);
     });
-  }
-  else {
+    // console.log(playAgainBtn);
+    // // $("#reset").css({ display: "block" });
+    // playAgainBtn.style.display = "block";
+    // $("gif").append(playAgainBtn);
+  } else {
     gifDiv.innerHTML = "";
     gifDiv.appendChild(img);
-    fadeIn(img);
+    fadeIn(img, 100);
+    // const playAgainBtn = $("#reset");
+
+    // fadeIn(playAgainBtn, 50);
   }
 };
 
@@ -442,7 +458,7 @@ $(document).on("click", "#reset", function() {
     });
   });
 
-  $(".header").css({ display: "none" }); //?
+  header.innerHTML = "";
 });
 
 // IS CHILD CHANGED NECESSARY?
@@ -462,7 +478,7 @@ db.ref("comment").on("value", () => commentDisplay());
 
 db.ref("player").on("value", () => playerDisplay());
 
-function fadeIn(element) {
+function fadeIn(element, millisecs) {
   // console.log("fadeIn");
   var op = 0.1; // initial opacity
   element.style.display = "block";
@@ -472,10 +488,10 @@ function fadeIn(element) {
     }
     element.style.opacity = op;
     op += 0.1;
-  }, 50);
+  }, millisecs);
 }
 
-function fadeOutAndCallback(image, callback) {
+function fadeOutAndCallback(image, millisecs, callback) {
   var opacity = 1;
   var fadeOutTimer = setInterval(function() {
     if (opacity < 0.1) {
@@ -485,7 +501,7 @@ function fadeOutAndCallback(image, callback) {
     }
     image.style.opacity = opacity;
     opacity -= 0.1;
-  }, 50);
+  }, millisecs);
 }
 // Not used
 
